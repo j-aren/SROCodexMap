@@ -73,9 +73,10 @@ body {
 	position: fixed;
 	left: 0;
 	bottom: 10px;
-	color: #222;
-	background-color: #fff;
-	box-shadow: 0 0 5px 1px #222;
+	color: var(--accent);
+	background-color: var(--surface);
+	border: 1px solid var(--border);
+	box-shadow: 0 0 6px 1px rgba(0, 0, 0, 0.5);
 	border-radius: 0 4px 4px 0px;
 	width: 36px;
 	transition-delay: 0.3s;
@@ -112,6 +113,15 @@ body {
    change it in one place or the sidebar scroll area drifts out of sync. */
 :root {
 	--sidebar-footer-height: 74px;
+
+	/* desert-codex palette - matches srocodex.org so the iframe feels native */
+	--bg:          #171310;  /* page / sidebar, near-black warm brown */
+	--surface:     #211a14;  /* raised: inputs, submenus, icon chips */
+	--border:      #3a3226;  /* hairlines */
+	--text:        #e8dcc3;  /* primary, warm parchment */
+	--text-dim:    #9c8b6d;  /* secondary - 5.5:1 on --bg, passes AA */
+	--accent:      #d9b25f;  /* gold - 9.1:1 on --bg. Use scarcely: brand,
+	                            active nav, key highlights. Not everywhere. */
 }
 
 .sidebar-content {
@@ -133,15 +143,18 @@ body {
 	align-items: center;
 }
 
+/* Serif is reserved for the wordmark - everything functional stays sans. */
 .sidebar-wrapper .sidebar-brand > a {
-	color: #f1f1f1;
-	font-weight: bold;
+	color: var(--text);
+	font-family: Georgia, 'Times New Roman', serif;
+	font-size: 20px;
+	letter-spacing: 0.01em;
 	flex-grow: 1;
 }
 
 .sidebar-wrapper .sidebar-brand .version{
-	color: #f1f1f1;
-	font-size: 13px;
+	color: var(--text-dim);
+	font-size: 12px;
 }
 
 .sidebar-wrapper .sidebar-brand #close-sidebar {
@@ -302,7 +315,7 @@ body {
 
 .badge-sonar {
   display: inline-block;
-  background: #980303;
+  background: var(--accent);
   border-radius: 50%;
   height: 8px;
   width: 8px;
@@ -315,7 +328,7 @@ body {
   position: absolute;
   top: 0;
   left: 0;
-  border: 2px solid #980303;
+  border: 2px solid var(--accent);
   opacity: 0;
   border-radius: 50%;
   width: 100%;
@@ -349,15 +362,15 @@ body {
   height: 0px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #525965;
+  background: #4a3f30;
   border: 0px none #ffffff;
   border-radius: 0;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #525965;
+  background: #4a3f30;
 }
 ::-webkit-scrollbar-thumb:active {
-  background: #525965;
+  background: #4a3f30;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
@@ -375,17 +388,21 @@ body {
 }
 
 /*
- * JellyBitz Theme
+ * Theme (desert-codex)
+ *
+ * The .jelly-theme / .jelly-color class names are upstream's and are kept
+ * deliberately as styling hooks - retheming them rather than renaming keeps
+ * upstream changes mergeable. The names mean nothing; the values below do.
  */
 .jelly-color{
-	color: #00beff;
+	color: var(--accent);
 }
 .jelly-theme .sidebar-wrapper {
-	background: #31353D;
+	background: var(--bg);
 }
 .jelly-theme .sidebar-wrapper .sidebar-search,
 .jelly-theme .sidebar-wrapper .sidebar-menu {
-	border-top: 1px solid #3a3f48;
+	border-top: 1px solid var(--border);
 }
 .jelly-theme .sidebar-wrapper .sidebar-search input.search-menu,
 .jelly-theme .sidebar-wrapper .sidebar-search .input-group-text {
@@ -397,40 +414,52 @@ body {
 .jelly-theme .sidebar-wrapper .sidebar-menu ul li a,
 .jelly-theme .sidebar-footer-actions>a,
 .jelly-theme .sidebar-credit {
-	color: #b9bbbe;
+	color: var(--text-dim);
 }
 .jelly-theme .sidebar-wrapper .sidebar-menu ul li:hover>a,
-.jelly-theme .sidebar-wrapper .sidebar-menu .sidebar-dropdown.active>a,
 .jelly-theme .sidebar-wrapper .sidebar-brand>a:hover,
 .jelly-theme .sidebar-footer-actions>a:hover i,
 .jelly-theme .sidebar-credit a:hover {
-	color: #e6e6fa;
+	color: var(--text);
+}
+/* Gold marks the one thing that is currently active, nothing else. */
+.jelly-theme .sidebar-wrapper .sidebar-menu .sidebar-dropdown.active>a {
+	color: var(--accent);
 }
 .page-wrapper.jelly-theme.toggled #close-sidebar {
-	color: #bdbdbd;
+	color: var(--text-dim);
 }
 .page-wrapper.jelly-theme.toggled #close-sidebar:hover {
-	color: #ffffff;
+	color: var(--text);
 }
+/* Upstream glowed these cyan. Gold, and dimmer - a lit lamp, not a neon sign. */
 .jelly-theme .sidebar-wrapper ul li:hover a i,
 .jelly-theme .sidebar-wrapper .sidebar-dropdown .sidebar-submenu li a:hover:before,
 .jelly-theme .sidebar-wrapper .sidebar-search input.search-menu:focus+span,
 .jelly-theme .sidebar-wrapper .sidebar-menu .sidebar-dropdown.active a i {
-	text-shadow:0px 0px 15px #00beff;
+	color: var(--accent);
+	text-shadow: 0px 0px 10px rgba(217, 178, 95, 0.45);
 }
 .jelly-theme .sidebar-wrapper .sidebar-menu ul li a i,
 .jelly-theme .sidebar-wrapper .sidebar-menu .sidebar-dropdown div,
 .jelly-theme .sidebar-wrapper .sidebar-search input.search-menu,
 .jelly-theme .sidebar-wrapper .sidebar-search .input-group-text {
-	background: #3a3f48;
+	background: var(--surface);
+}
+.jelly-theme .sidebar-wrapper .sidebar-search input.search-menu::placeholder {
+	color: var(--text-dim);
+	opacity: 0.7;
 }
 .jelly-theme .sidebar-wrapper .sidebar-menu .header-menu span {
-	color: #6c7b88;
+	color: var(--text-dim);
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	font-size: 11px;
 }
 .jelly-theme .sidebar-footer {
-	background: #3a3f48;
-	box-shadow: 0px -1px 5px #282c33;
-	border-top: 1px solid #464a52;
+	background: var(--surface);
+	box-shadow: 0px -1px 5px rgba(0, 0, 0, 0.4);
+	border-top: 1px solid var(--border);
 }
 .jelly-theme .sidebar-footer-actions>a:first-child {
 	border-left: none;
@@ -438,26 +467,87 @@ body {
 .jelly-theme .sidebar-footer-actions>a:last-child {
 	border-right: none;
 }
+/* Bootstrap's stock badge colours (red "Hot", blue "A-Z") are the last
+   off-palette bits in the sidebar. Muted, so they don't outrank the accent. */
+.jelly-theme .sidebar-wrapper .badge-danger,
+.jelly-theme .sidebar-wrapper .badge-primary {
+	background: var(--surface);
+	border: 1px solid var(--border);
+	color: var(--text-dim);
+	font-weight: normal;
+}
+
+/*
+ * Leaflet overrides - popups and controls ship white and read as a
+ * different product sitting on top of the map.
+ */
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+	background: var(--bg);
+	color: var(--text);
+	border: 1px solid var(--border);
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+.leaflet-popup-content a {
+	color: var(--accent);
+}
+.leaflet-popup-close-button {
+	color: var(--text-dim) !important;
+}
+.leaflet-popup-close-button:hover {
+	color: var(--text) !important;
+}
+.leaflet-bar a,
+.leaflet-control-layers,
+.leaflet-touch .leaflet-bar a {
+	background: var(--surface);
+	color: var(--text);
+	border-bottom-color: var(--border);
+}
+.leaflet-bar a:hover {
+	background: var(--border);
+	color: var(--text);
+}
+.leaflet-control-attribution {
+	background: rgba(23, 19, 16, 0.8) !important;
+	color: var(--text-dim);
+}
+.leaflet-control-attribution a {
+	color: var(--accent);
+}
   
 /**
  * Modal CSS
  */
 .modal-content{
-	color: #e6e6fa;
-	background: #31353D;
+	color: var(--text);
+	background: var(--bg);
+	border: 1px solid var(--border);
 }
 .modal-content .close{
-	color: #bdbdbd;
+	color: var(--text-dim);
 	text-shadow:none;
 }
 .modal-content .close:hover{
-	color: #fff;
+	color: var(--text);
 }
 .modal-header{
-	border-bottom-color: #3a3f48;
+	border-bottom-color: var(--border);
 }
 .modal-footer{
-	border-top-color: #3a3f48;
+	border-top-color: var(--border);
+}
+/* Bootstrap's form controls default to a white field - too bright against the panel. */
+.modal-content .form-control{
+	color: var(--text);
+	background: var(--surface);
+	border: 1px solid var(--border);
+}
+.modal-content .form-control:focus{
+	color: var(--text);
+	background: var(--surface);
+	border-color: var(--accent);
+	box-shadow: none;
 }
 .modal .btn{
 	box-shadow: none;
