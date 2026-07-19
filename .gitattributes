@@ -1,0 +1,5 @@
+# Vendored third-party libraries must stay byte-identical to what upstream
+# published, so their checksums can be verified against the CDN. No EOL conversion.
+assets/js/vendor/**   -text
+assets/css/vendor/**  -text
+assets/js/leaflet/**  -text

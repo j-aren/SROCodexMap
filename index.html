@@ -6,30 +6,27 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
 	<!-- HTML Meta Tags -->
-	<title>xSROMap | Silkroad Online Map</title>
-	<link rel="icon" type="image/png" href="assets/img/xSROMap.png">
-	<meta name="author" content="JellyBitz">
-	<meta name="description" content="The easy way to explore the Silkroad Online world map.">
-	<meta name="keywords" content="silkroad online,xsromap,map,minimap,viewer,navigator,JellyBitz">
+	<title>SROCodex Map | Silkroad Online World Map</title>
+	<!-- TODO: favicon + social share image once the SROCodex mark is copied in -->
+	<meta name="author" content="SROCodex">
+	<meta name="description" content="Interactive Silkroad Online world map — towns, zones, dungeons and NPC locations.">
+	<meta name="keywords" content="silkroad online,srocodex,map,world map,minimap,viewer,navigator,npc,spawn">
 	<!-- Google / Search Engine Tags -->
-	<meta itemprop="name" content="xSROMap">
-	<meta itemprop="description" content="The easy way to explore the Silkroad Online world map.">
-	<meta itemprop="image" content="assets/img/JellyBitz.png">
+	<meta itemprop="name" content="SROCodex Map">
+	<meta itemprop="description" content="Interactive Silkroad Online world map — towns, zones, dungeons and NPC locations.">
 	<!--- Facebook / Open Graph protocol --->
-	<meta property="og:site_name" content="xSROMap">
+	<meta property="og:site_name" content="SROCodex">
 	<meta property="og:type" content="website">
-	<meta property="og:url" content="https://github.com/JellyBitz/xSROMap">
-	<meta property="og:image" content="assets/img/JellyBitz.png">
-	<meta property="og:title" content="xSROMap | Silkroad Online Map">
-	<meta property="og:description" content="The easy way to explore the Silkroad Online world map.">
+	<meta property="og:url" content="https://srocodex.org/maps">
+	<meta property="og:title" content="SROCodex Map | Silkroad Online World Map">
+	<meta property="og:description" content="Interactive Silkroad Online world map — towns, zones, dungeons and NPC locations.">
 	<!--- Twitter Meta Tags --->
-	<meta name="twitter:title" content="xSROMap | Silkroad Online Map">
-	<meta name="twitter:description" content="The easy way to explore the Silkroad Online world map.">
-	<meta name="twitter:image" content="assets/img/JellyBitz.png">
+	<meta name="twitter:title" content="SROCodex Map | Silkroad Online World Map">
+	<meta name="twitter:description" content="Interactive Silkroad Online world map — towns, zones, dungeons and NPC locations.">
 	<meta name="twitter:card" content="summary_large_image">
 
-	<!-- Bootstrap -->
-	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+	<!-- Bootstrap (vendored - this page is iframed into srocodex.org, no third-party script origins) -->
+	<link rel="stylesheet" type="text/css" href="assets/css/vendor/bootstrap-4.6.2.min.css">
 
 	<!-- Font Awesome -->
 	<link rel="stylesheet" type="text/css" href="assets/fonts/font-awesome-5.11.1/css/all.min.css">
@@ -48,23 +45,8 @@
 		<nav id="sidebar" class="sidebar-wrapper">
 			<div class="sidebar-content">
 				<div class="sidebar-brand">
-					<a href="#"><span class="jelly-color">x</span>SROMap</a>
-					<span class="version"><span class="jelly-color">v</span>1.4.0</span>
-				</div>
-				<div class="sidebar-header">
-					<div class="user-pic">
-						<img class="img-responsive img-rounded" src="assets/img/JellyBitz.png"
-							alt="User picture">
-					</div>
-					<div class="user-info">
-						<span class="user-name"><strong>By JellyBitz</strong>
-						</span>
-						<span class="user-role">Engels Quintero</span>
-						<span class="user-status">
-							<i class="fab fa-discord"></i>
-							<span>JellyBitz#7643</span>
-						</span>
-					</div>
+					<a href="https://srocodex.org"><span class="jelly-color">SRO</span>Codex</a>
+					<span class="version"><span class="jelly-color">v</span>1.0.0</span>
 				</div>
 				<!-- sidebar-menu  -->
 				<div class="sidebar-menu">
@@ -73,9 +55,9 @@
 							<span>Extra info</span>
 						</li>
 						<li>
-							<a href="https://github.com/JellyBitz/xSROMap" target="_blank">
+							<a href="https://github.com/JellyBitz/xSROMap" target="_blank" rel="noopener">
 								<i class="fa fa-book"></i>
-								<span>Documentation</span>
+								<span>Map engine docs</span>
 							</a>
 						</li>
 						<li>
@@ -85,16 +67,10 @@
 								<span class="badge badge-pill badge-danger">Hot</span>
 							</a>
 						</li>
-						<li>
-							<a href="https://www.buymeacoffee.com/JellyBitz" target="_blank">
-								<i class="fa fa-mug-hot"></i>
-								<span>Support me!</span>
-							</a>
-						</li>
 					</ul>
 				</div>
 
-				<!-- sidebar-header  -->
+				<!-- sidebar-search  -->
 				<div id="search" class="sidebar-search">
 					<div>
 						<div class="input-group">
@@ -284,13 +260,20 @@
 			</div>
 			<!-- sidebar-content  -->
 			<div class="sidebar-footer">
-				<!--a href="#">
-					<i class="fa fa-cogs"></i>
-					<span class="badge badge-pill badge-warning notification">?</span>
-				</a-->
-				<a id="close-sidebar" href="#">
-					<i class="fas fa-times"></i>
-				</a>
+				<!-- Attribution — required by the upstream MIT license, keep visible -->
+				<div class="sidebar-credit">
+					Map engine <a href="https://github.com/JellyBitz/xSROMap" target="_blank" rel="noopener">xSROMap</a> v1.4.0<br>
+					MIT &copy; 2019 Engels Quintero
+				</div>
+				<div class="sidebar-footer-actions">
+					<!--a href="#">
+						<i class="fa fa-cogs"></i>
+						<span class="badge badge-pill badge-warning notification">?</span>
+					</a-->
+					<a id="close-sidebar" href="#">
+						<i class="fas fa-times"></i>
+					</a>
+				</div>
 			</div>
 		</nav>
 
@@ -336,9 +319,9 @@
 	</div><!-- page-wrapper -->
 
 	<!-- jQuery first, then Popper.js, then Bootstrap JS -->
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
-	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+	<script src="assets/js/vendor/jquery-3.7.1.min.js"></script>
+	<script src="assets/js/vendor/popper-1.16.1.min.js"></script>
+	<script src="assets/js/vendor/bootstrap-4.6.2.min.js"></script>
 	<!-- Leaflet -->
 	<script src="assets/js/leaflet/Leaflet.min.js"></script>
 	<script src="assets/js/leaflet/Leaflet.Geoman.min.js"></script>
@@ -346,13 +329,5 @@
 	<!-- Main -->
 	<script src="assets/js/xSROMap.js"></script>
 	<script src="assets/js/main.js"></script>
-	<!-- Global site tag (gtag.js) - Google Analytics -->
-	<script async src="https://www.googletagmanager.com/gtag/js?id=G-T0ZRSLYW9K"></script>
-	<script>
-	window.dataLayer = window.dataLayer || [];
-	function gtag(){dataLayer.push(arguments);}
-	gtag('js', new Date());
-	gtag('config', 'G-T0ZRSLYW9K');
-	</script>
 </body>
 </html>
