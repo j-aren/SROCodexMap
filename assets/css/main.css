@@ -165,7 +165,7 @@ body {
 }
 
 .sidebar-wrapper .sidebar-header .user-info {
-	float: left;
+	padding: 4px 0;
 }
 
 .sidebar-wrapper .sidebar-header .user-info > span {
@@ -184,7 +184,12 @@ body {
 .sidebar-wrapper .sidebar-header .user-info .user-status i {
 	font-size: 14px;
 	margin-right: 4px;
-	color: #728ad5;
+}
+
+/* attribution link inherits the sidebar text colour instead of Bootstrap blue */
+.sidebar-wrapper .sidebar-header .user-info .user-status a {
+	color: inherit;
+	text-decoration: underline;
 }
 
 /* sidebar-search */

@@ -28,8 +28,8 @@ for(var i=0;i<TPs.length;i++)
 	// Add to map
 	xSROMap.AddTeleport(html,TPs[i].type,TPs[i].x,TPs[i].y,TPs[i].z,TPs[i].region);
 }
-// Player example
-xSROMap.AddPlayer("JellyBitz",'<a href="#"><b>JellyBitz</b></a><br><i>Hi, I\'ll be here watching you!<br>And you can\'t do nothing about ... >:)</i>',116.75,117);
+// Player marker example (upstream demo removed)
+//xSROMap.AddPlayer("Name",'<b>Name</b><br><i>Popup text</i>',116.75,117);
 // Activate drawing creator
 xSROMap.ShowDrawingToolbar('topright',true,false,true,false,true,true,true,true,false,true);
 
