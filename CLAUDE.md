@@ -72,11 +72,18 @@ Plain static site — no build step. Open it and it runs.
   served as Leaflet tiles). Touch only for the "replace tiles/art" work stream.
 - `assets/fonts/font-awesome-5.11.1/` — icons (local, 15MB).
 
-**External CDN dependencies** (in `index.html`): Bootstrap 4.4.1, jQuery 3.4.1,
-Popper. These load from CDNs — fine for a standalone static site, but note it's
-*not* self-contained the way the main site's pages are. Also present: **JellyBitz's
-Google Analytics tag** (`G-T0ZRSLYW9K`) near the end of `index.html` — that's his,
-not ours; remove or replace it early.
+- `assets/js/vendor/`, `assets/css/vendor/` — jQuery 3.7.1, Popper 1.16.1,
+  Bootstrap 4.6.2, vendored locally. **Keep them local.** Upstream loaded these
+  from CDNs, which would be defensible for a standalone site — but this page is
+  iframed into srocodex.org, so a third-party script origin here is a
+  third-party script origin on our domain. (Upstream's jQuery tag also carried
+  no SRI hash at all.) Don't reintroduce a CDN tag for convenience. `.gitattributes`
+  keeps these byte-identical to what upstream published so they stay checksum-verifiable.
+  Bootstrap stays on **4.x** — 5.x drops jQuery and would break the sidebar and modal markup.
+
+**No analytics.** Upstream shipped JellyBitz's Google Analytics tag; it was
+removed. If we ever want analytics, it goes through whatever the main site uses,
+not a second tag inside the iframe.
 
 ## Coordinate systems (read before any map-position work)
 
@@ -110,6 +117,15 @@ Three directions, roughly increasing in effort:
    for shareable location links (README), and `main.js` reads them. So the main
    site just builds a URL; this repo makes sure the param handling + `FlyView`/
    marker highlight land where we want. Design the URL contract deliberately.
+
+   **Security note for this work stream:** URL params are attacker-controlled
+   input, and both `main.js` and `xSROMap.js` build popup/sidebar HTML by string
+   concatenation before handing it to jQuery/Leaflet. Anything off the query
+   string must be validated (coords → `parseFloat` + finite/range check, never
+   interpolated raw) or escaped before it reaches an HTML sink. Note the param
+   readers already exist in **two** places — `xSROMap.js:273` positions the map,
+   `main.js:153` prefills the search box — so validation has to cover both, or
+   they should be consolidated into one reader.
 3. **Replace the tiles / art** — swap or re-render the actual map imagery under
    `assets/img/silkroad/`. Heavy, involved, and it's what makes the clone large.
    Save for last; understand the tile naming/zoom-level scheme first.
