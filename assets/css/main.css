@@ -108,9 +108,15 @@ body {
 
 /* sidebar-content */
 
+/* Footer height lives here because .sidebar-content has to subtract it -
+   change it in one place or the sidebar scroll area drifts out of sync. */
+:root {
+	--sidebar-footer-height: 74px;
+}
+
 .sidebar-content {
-	max-height: calc(100% - 30px);
-	height: calc(100% - 30px);
+	max-height: calc(100% - var(--sidebar-footer-height));
+	height: calc(100% - var(--sidebar-footer-height));
 	overflow-y: auto;
 	position: relative;
 }
@@ -142,56 +148,6 @@ body {
 	cursor: pointer;
 	font-size: 20px;
 }
-/* sidebar-header */
-
-.sidebar-wrapper .sidebar-header {
-	padding: 5px 20px;
-	overflow: hidden;
-}
-
-.sidebar-wrapper .sidebar-header .user-pic {
-	float: left;
-	width: 64px;
-	padding: 2px;
-	border-radius: 12px;
-	margin-right: 15px;
-	overflow: hidden;
-}
-
-.sidebar-wrapper .sidebar-header .user-pic img {
-	object-fit: cover;
-	height: 100%;
-	width: 100%;
-}
-
-.sidebar-wrapper .sidebar-header .user-info {
-	padding: 4px 0;
-}
-
-.sidebar-wrapper .sidebar-header .user-info > span {
-	display: block;
-}
-
-.sidebar-wrapper .sidebar-header .user-info .user-role {
-	font-size: 13px;
-}
-
-.sidebar-wrapper .sidebar-header .user-info .user-status {
-	font-size: 12px;
-	margin-top: 4px;
-}
-
-.sidebar-wrapper .sidebar-header .user-info .user-status i {
-	font-size: 14px;
-	margin-right: 4px;
-}
-
-/* attribution link inherits the sidebar text colour instead of Bootstrap blue */
-.sidebar-wrapper .sidebar-header .user-info .user-status a {
-	color: inherit;
-	text-decoration: underline;
-}
-
 /* sidebar-search */
 
 .sidebar-wrapper .sidebar-search > div {
@@ -308,10 +264,30 @@ body {
   position: absolute;
   width: 100%;
   bottom: 0;
+  height: var(--sidebar-footer-height);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+/* MIT attribution for the upstream map engine - see LICENSE */
+.sidebar-credit {
+  padding: 6px 20px;
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.sidebar-credit a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.sidebar-footer-actions {
   display: flex;
 }
 
-.sidebar-footer > a {
+.sidebar-footer-actions > a {
   flex-grow: 1;
   text-align: center;
   height: 30px;
@@ -319,7 +295,7 @@ body {
   position: relative;
 }
 
-.sidebar-footer > a .notification {
+.sidebar-footer-actions > a .notification {
   position: absolute;
   top: 0;
 }
@@ -407,7 +383,6 @@ body {
 .jelly-theme .sidebar-wrapper {
 	background: #31353D;
 }
-.jelly-theme .sidebar-wrapper .sidebar-header,
 .jelly-theme .sidebar-wrapper .sidebar-search,
 .jelly-theme .sidebar-wrapper .sidebar-menu {
 	border-top: 1px solid #3a3f48;
@@ -417,19 +392,18 @@ body {
 	border-color: transparent;
 	box-shadow: none;
 }
-.jelly-theme .sidebar-wrapper .sidebar-header .user-info .user-role,
-.jelly-theme .sidebar-wrapper .sidebar-header .user-info .user-status,
 .jelly-theme .sidebar-wrapper .sidebar-search input.search-menu,
 .jelly-theme .sidebar-wrapper .sidebar-search .input-group-text,
 .jelly-theme .sidebar-wrapper .sidebar-menu ul li a,
-.jelly-theme .sidebar-footer>a {
+.jelly-theme .sidebar-footer-actions>a,
+.jelly-theme .sidebar-credit {
 	color: #b9bbbe;
 }
 .jelly-theme .sidebar-wrapper .sidebar-menu ul li:hover>a,
 .jelly-theme .sidebar-wrapper .sidebar-menu .sidebar-dropdown.active>a,
-.jelly-theme .sidebar-wrapper .sidebar-header .user-info,
 .jelly-theme .sidebar-wrapper .sidebar-brand>a:hover,
-.jelly-theme .sidebar-footer>a:hover i {
+.jelly-theme .sidebar-footer-actions>a:hover i,
+.jelly-theme .sidebar-credit a:hover {
 	color: #e6e6fa;
 }
 .page-wrapper.jelly-theme.toggled #close-sidebar {
@@ -458,10 +432,10 @@ body {
 	box-shadow: 0px -1px 5px #282c33;
 	border-top: 1px solid #464a52;
 }
-.jelly-theme .sidebar-footer>a:first-child {
+.jelly-theme .sidebar-footer-actions>a:first-child {
 	border-left: none;
 }
-.jelly-theme .sidebar-footer>a:last-child {
+.jelly-theme .sidebar-footer-actions>a:last-child {
 	border-right: none;
 }
   
