@@ -242,8 +242,11 @@ var xSROMap = function(){
 	};
 	// initialize UI controls
 	var initControls = function(){
+		// All controls go top-right: the sidebar overlays the map's left edge,
+		// so anything positioned top-left is hidden behind it.
 		// move back to the last pointer
 		L.easyButton({
+			position:'topright',
 			states:[{
 				icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 576" style="vertical-align:middle"><path fill="#5b5b5b" d="M444.52 3.52L28.74 195.42c-47.97 22.39-31.98 92.75 19.19 92.75h175.91v175.91c0 51.17 70.36 67.17 92.75 19.19l191.9-415.78c15.99-38.39-25.59-79.97-63.97-63.97z"/></svg>',
 				title: 'Go Back',
@@ -253,10 +256,17 @@ var xSROMap = function(){
 			}]
 		}).addTo(map);
 		// measure distance: toggle a mode where clicks extend a measured path
-		var measureBtn = L.easyButton('<i class="fa fa-ruler"></i>', function(btn){
-			measureBtnEl = btn.button;
-			toggleMeasure();
-		}, 'Measure distance').addTo(map);
+		L.easyButton({
+			position:'topright',
+			states:[{
+				icon:'<i class="fa fa-ruler"></i>',
+				title:'Measure distance',
+				onClick:function(btn){
+					measureBtnEl = btn.button;
+					toggleMeasure();
+				}
+			}]
+		}).addTo(map);
 		// live cursor coordinate readout (bottom-right; bottom-left is hidden
 		// behind the sidebar, which overlays the map's left edge)
 		var coordReadout = L.control({position:'bottomright'});
