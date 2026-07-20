@@ -547,6 +547,69 @@ body {
 	cursor: default;
 	pointer-events: none;
 }
+/* Live cursor coordinate readout (bottom-left). Empty => nothing shown. */
+.xsro-coords {
+	font-size: 11px;
+	color: var(--text);
+	background: rgba(23, 19, 16, 0.8);
+	padding: 2px 8px;
+	border: 1px solid var(--border);
+	border-radius: 3px;
+	font-variant-numeric: tabular-nums;
+	pointer-events: none;
+}
+.xsro-coords:empty {
+	display: none;
+}
+/* Transient confirmation toast, centered near the top of the map. */
+.xsro-toast {
+	position: absolute;
+	top: 16px;
+	left: 50%;
+	transform: translate(-50%, -6px);
+	z-index: 1000;
+	background: var(--surface);
+	color: var(--text);
+	border: 1px solid var(--accent);
+	border-radius: 4px;
+	padding: 6px 14px;
+	font-size: 13px;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+	opacity: 0;
+	transition: opacity 0.25s ease, transform 0.25s ease;
+	pointer-events: none;
+}
+.xsro-toast-show {
+	opacity: 1;
+	transform: translate(-50%, 0);
+}
+/* Measure tool: live total banner, crosshair cursor, active button state. */
+.xsro-measure {
+	position: absolute;
+	top: 12px;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 1000;
+	background: var(--surface);
+	color: var(--text);
+	border: 1px solid var(--accent);
+	border-radius: 4px;
+	padding: 5px 12px;
+	font-size: 12px;
+	font-variant-numeric: tabular-nums;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+	pointer-events: none;
+	white-space: nowrap;
+}
+.leaflet-container.measuring {
+	cursor: crosshair;
+}
+.easy-button-button.measure-active {
+	background: var(--accent);
+}
+.easy-button-button.measure-active i {
+	color: var(--bg);
+}
   
 /**
  * Modal CSS
@@ -590,6 +653,35 @@ body {
 .script-editor-help b{
 	color: var(--text);
 	font-weight: 600;
+}
+.changelog{
+	font-size: 13px;
+	line-height: 1.55;
+}
+.changelog .changelog-heading{
+	color: var(--accent);
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	margin: 4px 0 8px;
+}
+.changelog .changelog-heading + ul{
+	margin: 0 0 18px;
+	padding-left: 18px;
+	color: var(--text-dim);
+}
+.changelog ul:last-child{
+	margin-bottom: 0;
+}
+.changelog li{
+	margin-bottom: 5px;
+}
+.changelog code{
+	color: var(--text);
+	background: var(--surface);
+	padding: 1px 5px;
+	border-radius: 3px;
+	font-size: 12px;
 }
 .modal .btn{
 	box-shadow: none;

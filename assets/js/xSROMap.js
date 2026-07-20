@@ -53,6 +53,15 @@ var xSROMap = function(){
 	// current tile layer
 	var mapLayer;
 	var coordGoBack;
+	var coordReadoutEl;
+	var clickMarkerId = 0;
+	// measure tool state
+	var measuring = false;
+	var measurePoints = [];
+	var measureLine = null;
+	var measureDots = [];
+	var measureReadoutEl = null;
+	var measureBtnEl = null;
 	var lastMarkerSelected;
 	// mapping
 	var mappingLayers = {};
@@ -233,8 +242,11 @@ var xSROMap = function(){
 	};
 	// initialize UI controls
 	var initControls = function(){
+		// All controls go top-right: the sidebar overlays the map's left edge,
+		// so anything positioned top-left is hidden behind it.
 		// move back to the last pointer
 		L.easyButton({
+			position:'topright',
 			states:[{
 				icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 576" style="vertical-align:middle"><path fill="#5b5b5b" d="M444.52 3.52L28.74 195.42c-47.97 22.39-31.98 92.75 19.19 92.75h175.91v175.91c0 51.17 70.36 67.17 92.75 19.19l191.9-415.78c15.99-38.39-25.59-79.97-63.97-63.97z"/></svg>',
 				title: 'Go Back',
@@ -243,19 +255,132 @@ var xSROMap = function(){
 				}
 			}]
 		}).addTo(map);
+		// measure distance: toggle a mode where clicks extend a measured path
+		L.easyButton({
+			position:'topright',
+			states:[{
+				icon:'<i class="fa fa-ruler"></i>',
+				title:'Measure distance',
+				onClick:function(btn){
+					measureBtnEl = btn.button;
+					toggleMeasure();
+				}
+			}]
+		}).addTo(map);
+		// live cursor coordinate readout (bottom-right; bottom-left is hidden
+		// behind the sidebar, which overlays the map's left edge)
+		var coordReadout = L.control({position:'bottomright'});
+		coordReadout.onAdd = function(){
+			coordReadoutEl = L.DomUtil.create('div','xsro-coords');
+			return coordReadoutEl;
+		};
+		coordReadout.addTo(map);
+	};
+	// Format a fixed coord for the readout: in-game PosX/PosY on the world layer,
+	// region + internal X/Y underground (what npcpos/pk2 data actually stores).
+	var formatReadout = function(coord){
+		if(coord.region > 32767)
+			return 'Rgn '+coord.region+' &middot; X '+coord.x+' Y '+coord.y;
+		return 'PosX '+Math.round(coord.posX)+' &middot; PosY '+Math.round(coord.posY);
+	};
+	// Measure tool: sum the straight-line distance between consecutive clicked
+	// points, using the same per-layer scaling as the Script Editor export
+	// (world = raw game units, dungeon = internal units / 10).
+	var measureTotal = function(){
+		var total = 0;
+		for(var i = 1; i < measurePoints.length; i++){
+			var a = CoordMapToSRO(measurePoints[i-1]);
+			var b = CoordMapToSRO(measurePoints[i]);
+			if(b.region > 32767)
+				total += Math.sqrt(Math.pow(a.x-b.x,2)+Math.pow(a.y-b.y,2)) / 10;
+			else
+				total += Math.sqrt(Math.pow(a.posX-b.posX,2)+Math.pow(a.posY-b.posY,2));
+		}
+		return total;
+	};
+	var updateMeasureReadout = function(){
+		if(!measureReadoutEl)
+			return;
+		measureReadoutEl.innerHTML = measurePoints.length < 2
+			? 'Click points to measure &middot; Esc to finish'
+			: Math.round(measureTotal()).toLocaleString()+' game units &middot; '+measurePoints.length+' points';
+	};
+	var redrawMeasure = function(){
+		if(measureLine){ map.removeLayer(measureLine); measureLine = null; }
+		measureDots.forEach(function(d){ map.removeLayer(d); });
+		measureDots = [];
+		if(measurePoints.length){
+			measureLine = L.polyline(measurePoints,{color:'#d9b25f',weight:2,dashArray:'5,6',interactive:false,pmIgnore:true}).addTo(map);
+			measurePoints.forEach(function(ll){
+				measureDots.push(L.circleMarker(ll,{radius:3,color:'#d9b25f',fillColor:'#d9b25f',fillOpacity:1,interactive:false,pmIgnore:true}).addTo(map));
+			});
+		}
+		updateMeasureReadout();
+	};
+	var startMeasure = function(){
+		measuring = true;
+		measurePoints = [];
+		L.DomUtil.addClass(map.getContainer(),'measuring');
+		if(measureBtnEl) L.DomUtil.addClass(measureBtnEl,'measure-active');
+		map.doubleClickZoom.disable();
+		measureReadoutEl = L.DomUtil.create('div','xsro-measure',map.getContainer());
+		updateMeasureReadout();
+	};
+	var stopMeasure = function(){
+		measuring = false;
+		if(measureLine){ map.removeLayer(measureLine); measureLine = null; }
+		measureDots.forEach(function(d){ map.removeLayer(d); });
+		measureDots = [];
+		measurePoints = [];
+		L.DomUtil.removeClass(map.getContainer(),'measuring');
+		if(measureBtnEl) L.DomUtil.removeClass(measureBtnEl,'measure-active');
+		map.doubleClickZoom.enable();
+		if(measureReadoutEl && measureReadoutEl.parentNode)
+			measureReadoutEl.parentNode.removeChild(measureReadoutEl);
+		measureReadoutEl = null;
+	};
+	var toggleMeasure = function(){
+		measuring ? stopMeasure() : startMeasure();
 	};
 	var initEvents = function(){
-		// show SRO coordinates on click
+		// live coordinate readout follows the cursor
+		map.on('mousemove', function(e){
+			if(coordReadoutEl)
+				coordReadoutEl.innerHTML = formatReadout(CoordMapToSRO(e.latlng));
+		});
+		map.on('mouseout', function(){
+			if(coordReadoutEl)
+				coordReadoutEl.innerHTML = '';
+		});
+		// measure mode: each click extends the measured path
+		map.on('click', function(e){
+			if(!measuring)
+				return;
+			measurePoints.push(e.latlng);
+			redrawMeasure();
+		});
+		// Esc finishes a measurement
+		L.DomEvent.on(document,'keydown',function(e){
+			if(e.keyCode === 27 && measuring)
+				stopMeasure();
+		});
+		// double-click a spot: drop a persistent location pin there, with its
+		// coordinates, a copy-link shortcut and a remove action in the popup
 		map.on('dblclick', function (e){
-			// add game coords
+			if(measuring)
+				return;
 			var coord = CoordMapToSRO(e.latlng);
 			var content = '[<b> X:'+coord.x+" , Y:"+coord.y+" , Z:"+coord.z+" , Region: "+coord.region+ (coord.region<=32767?' ('+(coord.region&0xFF)+','+(coord.region>>8)+')':'')+' </b>]';
 			if(coord.region <= 32767)
 				content = "(<b> PosX:"+coord.posX+" , PosY:"+coord.posY+" </b>)<br>"+content;
 			// link shortcut
 			var copyLink = '<a class="leaflet-popup-copy-button" title="Copy Link" href="#" onClick="xSROMap.LinkToClipboard('+coord.x+','+coord.y+','+coord.z+','+coord.region+')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 576" style="vertical-align:middle"><path d="M320 448v40c0 13.255-10.745 24-24 24H24c-13.255 0-24-10.745-24-24V120c0-13.255 10.745-24 24-24h72v296c0 30.879 25.121 56 56 56h168zm0-344V0H152c-13.255 0-24 10.745-24 24v368c0 13.255 10.745 24 24 24h272c13.255 0 24-10.745 24-24V128H344c-13.2 0-24-10.8-24-24zm120.971-31.029L375.029 7.029A24 24 0 0 0 358.059 0H352v96h96v-6.059a24 24 0 0 0-7.029-16.97z"/></svg></a>';
-			// show popup
-			L.popup().setLatLng(e.latlng).setContent(copyLink+content).openOn(map);
+			// drop the pin and open its popup
+			var id = 'click-'+(clickMarkerId++);
+			var removeLink = '<br><a href="#" onClick="xSROMap.RemoveLocation(\''+id+'\');return false;">Remove <i class="fa fa-trash"></i></a>';
+			var marker = addLocationMarker(id, copyLink+content+removeLink, coord);
+			if(marker)
+				marker.openPopup();
 		});
 		// tracking all shapes created with toolbar at the current layer
 		map.on('pm:create',function(e){
@@ -277,7 +402,7 @@ var xSROMap = function(){
 	var addLocationMarker = function(id, html, coord){
 		// Add only new ones
 		if(mappingMarkers['location'][id])
-			return;
+			return mappingMarkers['location'][id];
 		var icon = new L.Icon({
 			iconUrl: imgHost+'icon/wmap_sign_location.gif',
 			iconSize:	[36,36],
@@ -296,6 +421,7 @@ var xSROMap = function(){
 		marker.options['xMap'] = {"layer":layer,'coordinates':coord};
 		// keep register to not get lost on changing layers
 		mappingMarkers['location'][id] = marker;
+		return marker;
 	};
 	var setInitialView = function(coord) {
 		var GET = function(parameter){
@@ -419,6 +545,24 @@ var xSROMap = function(){
 		}
 		// using x,y,z,region internal silkroad coords
 		return {'x':x,'y':y,'z':z,'region':region};
+	};
+	// Build a shareable deep-link URL for an already-fixed coord. Uses the IC
+	// (x,y,z,region) form so it round-trips through fixCoords on load, same as
+	// the popup copy button - works for both world and dungeon coords.
+	var shareURLFor = function(coord){
+		return window.location.href.split(/\?|#/)[0]+'?x='+coord.x+'&y='+coord.y+'&z='+coord.z+'&region='+coord.region;
+	};
+	// Brief on-map confirmation toast (e.g. after copying a link).
+	var toast = function(message){
+		var el = L.DomUtil.create('div', 'xsro-toast', map.getContainer());
+		el.textContent = message;
+		// force a reflow so the fade-in transition actually runs
+		el.offsetWidth;
+		L.DomUtil.addClass(el, 'xsro-toast-show');
+		setTimeout(function(){
+			L.DomUtil.removeClass(el, 'xsro-toast-show');
+			setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 300);
+		}, 1600);
 	};
 	// Copy text to clipboard
 	var toClipboard = function(text){
@@ -691,8 +835,8 @@ var xSROMap = function(){
 			}
 		},
 		LinkToClipboard(x,y,z=null,region=null){
-			var coord = fixCoords(x,y,z,region);
-			toClipboard(window.location.href.split(/\?|#/)[0]+'?x='+coord.x+'&y='+coord.y+'&z='+coord.z+'&region='+coord.region);
+			toClipboard(shareURLFor(fixCoords(x,y,z,region)));
+			toast('Link copied');
 		},
 		// Toolbar for drawing and editing geometry shapes
 		ShowDrawingToolbar(position,drawMarker,drawCircleMarker,drawPolyline,drawRectangle,drawPolygon,drawCircle,canEdit,canDrag,canCut,canDelete){
@@ -708,6 +852,32 @@ var xSROMap = function(){
 				dragMode:canDrag,
 				cutPolygon:canCut,
 				removalMode:canDelete
+			});
+			// The drawing buttons ship with no tooltip - just cryptic icons.
+			// Label each one so hovering explains what it does.
+			var toolbarTips = {
+				drawMarker:'Place a marker',
+				drawCircleMarker:'Place a point marker',
+				drawPolyline:'Draw a line or route',
+				drawRectangle:'Draw a rectangle',
+				drawPolygon:'Draw an area',
+				drawCircle:'Draw a circle',
+				editMode:'Edit shapes – drag their points',
+				dragMode:'Move shapes around',
+				cutPolygon:'Cut a hole in a shape',
+				removalMode:'Delete shapes'
+			};
+			var buttons = map.pm.Toolbar.getButtons();
+			Object.keys(buttons).forEach(function(name){
+				var tip = toolbarTips[name];
+				var dom = buttons[name] && buttons[name].buttonsDomNode;
+				if(!tip || !dom)
+					return;
+				var link = dom.tagName === 'A' ? dom : dom.querySelector('a');
+				if(link){
+					link.title = tip;
+					link.setAttribute('aria-label',tip);
+				}
 			});
 		},
 		HideDrawingToolbar(){
