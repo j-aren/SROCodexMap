@@ -627,6 +627,35 @@ body {
 	color: var(--text);
 	font-weight: 600;
 }
+.changelog{
+	font-size: 13px;
+	line-height: 1.55;
+}
+.changelog .changelog-heading{
+	color: var(--accent);
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	margin: 4px 0 8px;
+}
+.changelog .changelog-heading + ul{
+	margin: 0 0 18px;
+	padding-left: 18px;
+	color: var(--text-dim);
+}
+.changelog ul:last-child{
+	margin-bottom: 0;
+}
+.changelog li{
+	margin-bottom: 5px;
+}
+.changelog code{
+	color: var(--text);
+	background: var(--surface);
+	padding: 1px 5px;
+	border-radius: 3px;
+	font-size: 12px;
+}
 .modal .btn{
 	box-shadow: none;
 }

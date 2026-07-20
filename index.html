@@ -64,6 +64,12 @@
 								<span>Script Editor</span>
 							</a>
 						</li>
+						<li>
+							<a href="#" data-toggle="modal" data-target="#modalChangelog">
+								<i class="fa fa-clipboard-list"></i>
+								<span>Changelog</span>
+							</a>
+						</li>
 					</ul>
 				</div>
 
@@ -316,6 +322,38 @@
 						<button type="button" class="btn btn-danger" onclick="xSROMap.ClearDrawingShapes()">Clear Layers</button>
 						<button type="button" class="btn btn-secondary" onclick="ImportDrawingLayers()">Import</button>
 						<button type="button" class="btn btn-secondary" onclick="ExportDrawingLayers()">Export</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Modal: Changelog -->
+		<div class="modal fade" id="modalChangelog" tabindex="-1" role="dialog" aria-labelledby="lblChangelog" aria-hidden="true">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="lblChangelog">Changelog</h5>
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
+					</div>
+					<div class="modal-body changelog">
+						<h6 class="changelog-heading">Recent changes</h6>
+						<ul>
+							<li>Rebranded to SROCodexMap with the SROCodex desert theme.</li>
+							<li>Removed the third-party CDN scripts and analytics tag; libraries are now served from this site.</li>
+							<li>Deep links (<code>?x&amp;y</code> or <code>?x&amp;y&amp;z&amp;region</code>) drop a pin on the linked spot.</li>
+							<li>Added a "Copy link to this view" button that copies a shareable link to the current position.</li>
+							<li>Added a live cursor coordinate readout (bottom-left).</li>
+							<li>The bottom-right label now shows the current map layer instead of an external link.</li>
+						</ul>
+						<h6 class="changelog-heading">Planned</h6>
+						<ul>
+							<li>Distance measurement tool.</li>
+							<li>Show/hide toggles for NPCs and teleporters.</li>
+							<li>Text search for NPCs and areas.</li>
+							<li>Monster spawn locations.</li>
+						</ul>
 					</div>
 				</div>
 			</div>
