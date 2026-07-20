@@ -145,11 +145,23 @@ body {
 
 /* Serif is reserved for the wordmark - everything functional stays sans. */
 .sidebar-wrapper .sidebar-brand > a {
+	display: flex;
+	align-items: center;
+	gap: 9px;
 	color: var(--text);
+	flex-grow: 1;
+}
+.sidebar-wrapper .sidebar-brand .brand-emblem {
+	flex-shrink: 0;
+}
+.sidebar-wrapper .sidebar-brand .brand-word {
 	font-family: Georgia, 'Times New Roman', serif;
 	font-size: 20px;
 	letter-spacing: 0.01em;
-	flex-grow: 1;
+}
+/* Match the main site's wordmark: SRO parchment, Codex gold, Map parchment. */
+.sidebar-wrapper .sidebar-brand .brand-word .jelly-color {
+	color: var(--accent);
 }
 
 .sidebar-wrapper .sidebar-brand .version{
