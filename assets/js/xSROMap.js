@@ -54,6 +54,7 @@ var xSROMap = function(){
 	var mapLayer;
 	var coordGoBack;
 	var coordReadoutEl;
+	var clickMarkerId = 0;
 	var lastMarkerSelected;
 	// mapping
 	var mappingLayers = {};
@@ -244,8 +245,9 @@ var xSROMap = function(){
 				}
 			}]
 		}).addTo(map);
-		// live cursor coordinate readout (bottom-left)
-		var coordReadout = L.control({position:'bottomleft'});
+		// live cursor coordinate readout (bottom-right; bottom-left is hidden
+		// behind the sidebar, which overlays the map's left edge)
+		var coordReadout = L.control({position:'bottomright'});
 		coordReadout.onAdd = function(){
 			coordReadoutEl = L.DomUtil.create('div','xsro-coords');
 			return coordReadoutEl;
@@ -269,17 +271,21 @@ var xSROMap = function(){
 			if(coordReadoutEl)
 				coordReadoutEl.innerHTML = '';
 		});
-		// show SRO coordinates on click
+		// double-click a spot: drop a persistent location pin there, with its
+		// coordinates, a copy-link shortcut and a remove action in the popup
 		map.on('dblclick', function (e){
-			// add game coords
 			var coord = CoordMapToSRO(e.latlng);
 			var content = '[<b> X:'+coord.x+" , Y:"+coord.y+" , Z:"+coord.z+" , Region: "+coord.region+ (coord.region<=32767?' ('+(coord.region&0xFF)+','+(coord.region>>8)+')':'')+' </b>]';
 			if(coord.region <= 32767)
 				content = "(<b> PosX:"+coord.posX+" , PosY:"+coord.posY+" </b>)<br>"+content;
 			// link shortcut
 			var copyLink = '<a class="leaflet-popup-copy-button" title="Copy Link" href="#" onClick="xSROMap.LinkToClipboard('+coord.x+','+coord.y+','+coord.z+','+coord.region+')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 576" style="vertical-align:middle"><path d="M320 448v40c0 13.255-10.745 24-24 24H24c-13.255 0-24-10.745-24-24V120c0-13.255 10.745-24 24-24h72v296c0 30.879 25.121 56 56 56h168zm0-344V0H152c-13.255 0-24 10.745-24 24v368c0 13.255 10.745 24 24 24h272c13.255 0 24-10.745 24-24V128H344c-13.2 0-24-10.8-24-24zm120.971-31.029L375.029 7.029A24 24 0 0 0 358.059 0H352v96h96v-6.059a24 24 0 0 0-7.029-16.97z"/></svg></a>';
-			// show popup
-			L.popup().setLatLng(e.latlng).setContent(copyLink+content).openOn(map);
+			// drop the pin and open its popup
+			var id = 'click-'+(clickMarkerId++);
+			var removeLink = '<br><a href="#" onClick="xSROMap.RemoveLocation(\''+id+'\');return false;">Remove <i class="fa fa-trash"></i></a>';
+			var marker = addLocationMarker(id, copyLink+content+removeLink, coord);
+			if(marker)
+				marker.openPopup();
 		});
 		// tracking all shapes created with toolbar at the current layer
 		map.on('pm:create',function(e){
@@ -301,7 +307,7 @@ var xSROMap = function(){
 	var addLocationMarker = function(id, html, coord){
 		// Add only new ones
 		if(mappingMarkers['location'][id])
-			return;
+			return mappingMarkers['location'][id];
 		var icon = new L.Icon({
 			iconUrl: imgHost+'icon/wmap_sign_location.gif',
 			iconSize:	[36,36],
@@ -320,6 +326,7 @@ var xSROMap = function(){
 		marker.options['xMap'] = {"layer":layer,'coordinates':coord};
 		// keep register to not get lost on changing layers
 		mappingMarkers['location'][id] = marker;
+		return marker;
 	};
 	var setInitialView = function(coord) {
 		var GET = function(parameter){
