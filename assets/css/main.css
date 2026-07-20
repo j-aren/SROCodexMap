@@ -145,11 +145,23 @@ body {
 
 /* Serif is reserved for the wordmark - everything functional stays sans. */
 .sidebar-wrapper .sidebar-brand > a {
+	display: flex;
+	align-items: center;
+	gap: 9px;
 	color: var(--text);
+	flex-grow: 1;
+}
+.sidebar-wrapper .sidebar-brand .brand-emblem {
+	flex-shrink: 0;
+}
+.sidebar-wrapper .sidebar-brand .brand-word {
 	font-family: Georgia, 'Times New Roman', serif;
 	font-size: 20px;
 	letter-spacing: 0.01em;
-	flex-grow: 1;
+}
+/* Match the main site's wordmark: SRO parchment, Codex gold, Map parchment. */
+.sidebar-wrapper .sidebar-brand .brand-word .jelly-color {
+	color: var(--accent);
 }
 
 .sidebar-wrapper .sidebar-brand .version{
@@ -168,6 +180,22 @@ body {
 }
 #search .input-group-append{
 	cursor: pointer;
+}
+.search-hint{
+	margin: 8px 0 0;
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--text-dim);
+}
+.search-hint-fmt{
+	opacity: 0.75;
+}
+.search-hint-soon{
+	font-size: 9px;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	vertical-align: 1px;
+	opacity: 0.7;
 }
 
 /* sidebar-menu */
@@ -508,12 +536,16 @@ body {
 	background: var(--border);
 	color: var(--text);
 }
+/* Now shows only the current layer name (e.g. "World Map", "Temple") - it's a
+   label, not a link, so render it as plain text and kill the dead-link cursor. */
 .leaflet-control-attribution {
 	background: rgba(23, 19, 16, 0.8) !important;
 	color: var(--text-dim);
 }
 .leaflet-control-attribution a {
-	color: var(--accent);
+	color: var(--text-dim);
+	cursor: default;
+	pointer-events: none;
 }
   
 /**
@@ -548,6 +580,16 @@ body {
 	background: var(--surface);
 	border-color: var(--accent);
 	box-shadow: none;
+}
+.script-editor-help{
+	color: var(--text-dim);
+	font-size: 12px;
+	line-height: 1.5;
+	margin-bottom: 14px;
+}
+.script-editor-help b{
+	color: var(--text);
+	font-weight: 600;
 }
 .modal .btn{
 	box-shadow: none;

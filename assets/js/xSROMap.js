@@ -117,6 +117,10 @@ var xSROMap = function(){
 			minZoom:0,maxZoom:9,zoomControl:false
 		});
 		new L.Control.Zoom({ position: 'topright' }).addTo(map);
+		// Drop the attribution prefix - upstream patched the Leaflet bundle to
+		// point it at JellyBitz's own hosted map. The MIT credit lives in the
+		// sidebar footer instead; only the current-layer name stays bottom-right.
+		map.attributionControl.setPrefix(false);
 		// Fix circle drawing on CRS.Simple
 		L.LatLng.prototype.distanceTo = function (currentPostion) {
 			var dx = currentPostion.lng - this.lng;
@@ -268,6 +272,31 @@ var xSROMap = function(){
 			delete mappingShapes[f.layer.xMap.id];
 		});
 	};
+	// Build a location pin from an already-fixed coord. Shared by AddLocation
+	// (search box) and setInitialView (deep-link), so there's one marker path.
+	var addLocationMarker = function(id, html, coord){
+		// Add only new ones
+		if(mappingMarkers['location'][id])
+			return;
+		var icon = new L.Icon({
+			iconUrl: imgHost+'icon/wmap_sign_location.gif',
+			iconSize:	[36,36],
+			iconAnchor:	[18,24],
+			popupAnchor:[-1,-16]
+		});
+		// create marker virtualized
+		var marker = L.marker(CoordSROToMap(coord),{icon:icon,pmIgnore:true,virtual:true});
+		// Add html popup
+		if(html !== "")
+			marker = marker.bindPopup(html);
+		// Check if is from the current layer
+		var layer = getLayer(coord);
+		if(layer == mapLayer)
+			marker.addTo(map);
+		marker.options['xMap'] = {"layer":layer,'coordinates':coord};
+		// keep register to not get lost on changing layers
+		mappingMarkers['location'][id] = marker;
+	};
 	var setInitialView = function(coord) {
 		var GET = function(parameter){
 			var items = location.search.substr(1).split("&");
@@ -285,10 +314,12 @@ var xSROMap = function(){
 		if(!isNaN(x) && !isNaN(y)){
 			var z = parseFloat(GET("z"));
 			var r = parseFloat(GET("region"));
-			if(!isNaN(z) && !isNaN(r))
-				setView(fixCoords(x,y,z,r));
-			else
-				setView(fixCoords(x,y));
+			// Resolve the linked spot (region overload only when both z and region parse)
+			var target = (!isNaN(z) && !isNaN(r)) ? fixCoords(x,y,z,r) : fixCoords(x,y);
+			setView(target);
+			// Deep-link: drop a pin so the linked spot is visibly marked, not just
+			// centered. Empty html => plain pin; nothing from the URL becomes HTML.
+			addLocationMarker('deeplink', '', target);
 		}
 		else{
 			// Parameters not found, set predefined view
@@ -642,29 +673,7 @@ var xSROMap = function(){
 			}
 		},
 		AddLocation(id,html,x,y,z=null,region=null){
-			// Add only new ones
-			if(!mappingMarkers['location'][id]){
-				var coord = fixCoords(x,y,z,region);
-				// create dimensions
-				var icon = new L.Icon({
-					iconUrl: imgHost+'icon/wmap_sign_location.gif',
-					iconSize:	[36,36],
-					iconAnchor:	[18,24],
-					popupAnchor:[-1,-16]
-				});
-				// create marker virtualized
-				var marker = L.marker(CoordSROToMap(coord),{icon:icon,pmIgnore:true,virtual:true});
-				// Add html popup
-				if(html !== "")
-					marker = marker.bindPopup(html);
-				// Check if is from the current layer
-				var layer = getLayer(coord);
-				if(layer == mapLayer)
-					marker.addTo(map);
-				marker.options['xMap'] = {"layer":layer,'coordinates':coord};
-				// keep register to not get lost on changing layers
-				mappingMarkers['location'][id] = marker;
-			}
+			addLocationMarker(id, html, fixCoords(x,y,z,region));
 		},
 		RemoveLocation(id){
 			var marker = mappingMarkers['location'][id];
