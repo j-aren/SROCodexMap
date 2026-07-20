@@ -583,6 +583,33 @@ body {
 	opacity: 1;
 	transform: translate(-50%, 0);
 }
+/* Measure tool: live total banner, crosshair cursor, active button state. */
+.xsro-measure {
+	position: absolute;
+	top: 12px;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 1000;
+	background: var(--surface);
+	color: var(--text);
+	border: 1px solid var(--accent);
+	border-radius: 4px;
+	padding: 5px 12px;
+	font-size: 12px;
+	font-variant-numeric: tabular-nums;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+	pointer-events: none;
+	white-space: nowrap;
+}
+.leaflet-container.measuring {
+	cursor: crosshair;
+}
+.easy-button-button.measure-active {
+	background: var(--accent);
+}
+.easy-button-button.measure-active i {
+	color: var(--bg);
+}
   
 /**
  * Modal CSS

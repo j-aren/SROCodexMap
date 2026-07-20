@@ -55,6 +55,13 @@ var xSROMap = function(){
 	var coordGoBack;
 	var coordReadoutEl;
 	var clickMarkerId = 0;
+	// measure tool state
+	var measuring = false;
+	var measurePoints = [];
+	var measureLine = null;
+	var measureDots = [];
+	var measureReadoutEl = null;
+	var measureBtnEl = null;
 	var lastMarkerSelected;
 	// mapping
 	var mappingLayers = {};
@@ -245,6 +252,11 @@ var xSROMap = function(){
 				}
 			}]
 		}).addTo(map);
+		// measure distance: toggle a mode where clicks extend a measured path
+		var measureBtn = L.easyButton('<i class="fa fa-ruler"></i>', function(btn){
+			measureBtnEl = btn.button;
+			toggleMeasure();
+		}, 'Measure distance').addTo(map);
 		// live cursor coordinate readout (bottom-right; bottom-left is hidden
 		// behind the sidebar, which overlays the map's left edge)
 		var coordReadout = L.control({position:'bottomright'});
@@ -261,6 +273,65 @@ var xSROMap = function(){
 			return 'Rgn '+coord.region+' &middot; X '+coord.x+' Y '+coord.y;
 		return 'PosX '+Math.round(coord.posX)+' &middot; PosY '+Math.round(coord.posY);
 	};
+	// Measure tool: sum the straight-line distance between consecutive clicked
+	// points, using the same per-layer scaling as the Script Editor export
+	// (world = raw game units, dungeon = internal units / 10).
+	var measureTotal = function(){
+		var total = 0;
+		for(var i = 1; i < measurePoints.length; i++){
+			var a = CoordMapToSRO(measurePoints[i-1]);
+			var b = CoordMapToSRO(measurePoints[i]);
+			if(b.region > 32767)
+				total += Math.sqrt(Math.pow(a.x-b.x,2)+Math.pow(a.y-b.y,2)) / 10;
+			else
+				total += Math.sqrt(Math.pow(a.posX-b.posX,2)+Math.pow(a.posY-b.posY,2));
+		}
+		return total;
+	};
+	var updateMeasureReadout = function(){
+		if(!measureReadoutEl)
+			return;
+		measureReadoutEl.innerHTML = measurePoints.length < 2
+			? 'Click points to measure &middot; Esc to finish'
+			: Math.round(measureTotal()).toLocaleString()+' game units &middot; '+measurePoints.length+' points';
+	};
+	var redrawMeasure = function(){
+		if(measureLine){ map.removeLayer(measureLine); measureLine = null; }
+		measureDots.forEach(function(d){ map.removeLayer(d); });
+		measureDots = [];
+		if(measurePoints.length){
+			measureLine = L.polyline(measurePoints,{color:'#d9b25f',weight:2,dashArray:'5,6',interactive:false,pmIgnore:true}).addTo(map);
+			measurePoints.forEach(function(ll){
+				measureDots.push(L.circleMarker(ll,{radius:3,color:'#d9b25f',fillColor:'#d9b25f',fillOpacity:1,interactive:false,pmIgnore:true}).addTo(map));
+			});
+		}
+		updateMeasureReadout();
+	};
+	var startMeasure = function(){
+		measuring = true;
+		measurePoints = [];
+		L.DomUtil.addClass(map.getContainer(),'measuring');
+		if(measureBtnEl) L.DomUtil.addClass(measureBtnEl,'measure-active');
+		map.doubleClickZoom.disable();
+		measureReadoutEl = L.DomUtil.create('div','xsro-measure',map.getContainer());
+		updateMeasureReadout();
+	};
+	var stopMeasure = function(){
+		measuring = false;
+		if(measureLine){ map.removeLayer(measureLine); measureLine = null; }
+		measureDots.forEach(function(d){ map.removeLayer(d); });
+		measureDots = [];
+		measurePoints = [];
+		L.DomUtil.removeClass(map.getContainer(),'measuring');
+		if(measureBtnEl) L.DomUtil.removeClass(measureBtnEl,'measure-active');
+		map.doubleClickZoom.enable();
+		if(measureReadoutEl && measureReadoutEl.parentNode)
+			measureReadoutEl.parentNode.removeChild(measureReadoutEl);
+		measureReadoutEl = null;
+	};
+	var toggleMeasure = function(){
+		measuring ? stopMeasure() : startMeasure();
+	};
 	var initEvents = function(){
 		// live coordinate readout follows the cursor
 		map.on('mousemove', function(e){
@@ -271,9 +342,23 @@ var xSROMap = function(){
 			if(coordReadoutEl)
 				coordReadoutEl.innerHTML = '';
 		});
+		// measure mode: each click extends the measured path
+		map.on('click', function(e){
+			if(!measuring)
+				return;
+			measurePoints.push(e.latlng);
+			redrawMeasure();
+		});
+		// Esc finishes a measurement
+		L.DomEvent.on(document,'keydown',function(e){
+			if(e.keyCode === 27 && measuring)
+				stopMeasure();
+		});
 		// double-click a spot: drop a persistent location pin there, with its
 		// coordinates, a copy-link shortcut and a remove action in the popup
 		map.on('dblclick', function (e){
+			if(measuring)
+				return;
 			var coord = CoordMapToSRO(e.latlng);
 			var content = '[<b> X:'+coord.x+" , Y:"+coord.y+" , Z:"+coord.z+" , Region: "+coord.region+ (coord.region<=32767?' ('+(coord.region&0xFF)+','+(coord.region>>8)+')':'')+' </b>]';
 			if(coord.region <= 32767)
