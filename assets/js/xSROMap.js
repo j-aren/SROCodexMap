@@ -843,6 +843,32 @@ var xSROMap = function(){
 				cutPolygon:canCut,
 				removalMode:canDelete
 			});
+			// The drawing buttons ship with no tooltip - just cryptic icons.
+			// Label each one so hovering explains what it does.
+			var toolbarTips = {
+				drawMarker:'Place a marker',
+				drawCircleMarker:'Place a point marker',
+				drawPolyline:'Draw a line or route',
+				drawRectangle:'Draw a rectangle',
+				drawPolygon:'Draw an area',
+				drawCircle:'Draw a circle',
+				editMode:'Edit shapes – drag their points',
+				dragMode:'Move shapes around',
+				cutPolygon:'Cut a hole in a shape',
+				removalMode:'Delete shapes'
+			};
+			var buttons = map.pm.Toolbar.getButtons();
+			Object.keys(buttons).forEach(function(name){
+				var tip = toolbarTips[name];
+				var dom = buttons[name] && buttons[name].buttonsDomNode;
+				if(!tip || !dom)
+					return;
+				var link = dom.tagName === 'A' ? dom : dom.querySelector('a');
+				if(link){
+					link.title = tip;
+					link.setAttribute('aria-label',tip);
+				}
+			});
 		},
 		HideDrawingToolbar(){
 			var f = false;
