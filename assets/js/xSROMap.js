@@ -117,6 +117,10 @@ var xSROMap = function(){
 			minZoom:0,maxZoom:9,zoomControl:false
 		});
 		new L.Control.Zoom({ position: 'topright' }).addTo(map);
+		// Drop the attribution prefix - upstream patched the Leaflet bundle to
+		// point it at JellyBitz's own hosted map. The MIT credit lives in the
+		// sidebar footer instead; only the current-layer name stays bottom-right.
+		map.attributionControl.setPrefix(false);
 		// Fix circle drawing on CRS.Simple
 		L.LatLng.prototype.distanceTo = function (currentPostion) {
 			var dx = currentPostion.lng - this.lng;

@@ -55,16 +55,9 @@
 							<span>Extra info</span>
 						</li>
 						<li>
-							<a href="https://github.com/JellyBitz/xSROMap" target="_blank" rel="noopener">
-								<i class="fa fa-book"></i>
-								<span>Map engine docs</span>
-							</a>
-						</li>
-						<li>
 							<a href="#" data-toggle="modal" data-target="#modalScriptEditor">
 								<i class="fa fa-edit"></i>
 								<span>Script Editor</span>
-								<span class="badge badge-pill badge-danger">Hot</span>
 							</a>
 						</li>
 					</ul>
@@ -289,12 +282,18 @@
 			<div class="modal-dialog" role="document">
 				<div class="modal-content">
 					<div class="modal-header">
-						<h5 class="modal-title" id="lblScriptEditor">Script Editor (Lite)</h5>
+						<h5 class="modal-title" id="lblScriptEditor">Script Editor</h5>
 						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 							<span aria-hidden="true">&times;</span>
 						</button>
 					</div>
 					<div class="modal-body">
+						<p class="script-editor-help">
+							Turn a route drawn on the map into a walk script, or paste a script to draw it back.
+							Draw a line with the toolbar (top-right of the map), pick your platform, then
+							<b>Export</b> to generate the script &mdash; or paste one below and hit <b>Import</b>
+							to see its path on the map.
+						</p>
 						<div class="form-group">
 							<select class="form-control" id="selectEditorType">
 								<option>-- Select Platform --</option>
@@ -305,7 +304,7 @@
 							</select>
 						</div>
 						<div class="form-group">
-							<textarea class="form-control" id="textareaScriptEditor" rows="11"></textarea>
+							<textarea class="form-control" id="textareaScriptEditor" rows="11" placeholder="Export output appears here, or paste a script to import..."></textarea>
 						</div>
 					</div>
 					<div class="modal-footer">
