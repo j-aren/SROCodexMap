@@ -53,6 +53,7 @@ var xSROMap = function(){
 	// current tile layer
 	var mapLayer;
 	var coordGoBack;
+	var coordReadoutEl;
 	var lastMarkerSelected;
 	// mapping
 	var mappingLayers = {};
@@ -243,8 +244,42 @@ var xSROMap = function(){
 				}
 			}]
 		}).addTo(map);
+		// copy a shareable deep-link to wherever the map is currently centered
+		L.easyButton({
+			states:[{
+				icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 576" style="vertical-align:middle"><path fill="#5b5b5b" d="M320 448v40c0 13.255-10.745 24-24 24H24c-13.255 0-24-10.745-24-24V120c0-13.255 10.745-24 24-24h72v296c0 30.879 25.121 56 56 56h168zm0-344V0H152c-13.255 0-24 10.745-24 24v368c0 13.255 10.745 24 24 24h272c13.255 0 24-10.745 24-24V128H344c-13.2 0-24-10.8-24-24zm120.971-31.029L375.029 7.029A24 24 0 0 0 358.059 0H352v96h96v-6.059a24 24 0 0 0-7.029-16.97z"/></svg>',
+				title: 'Copy link to this view',
+				onClick: function(){
+					toClipboard(shareURLFor(CoordMapToSRO(map.getCenter())));
+					toast('Link copied');
+				}
+			}]
+		}).addTo(map);
+		// live cursor coordinate readout (bottom-left)
+		var coordReadout = L.control({position:'bottomleft'});
+		coordReadout.onAdd = function(){
+			coordReadoutEl = L.DomUtil.create('div','xsro-coords');
+			return coordReadoutEl;
+		};
+		coordReadout.addTo(map);
+	};
+	// Format a fixed coord for the readout: in-game PosX/PosY on the world layer,
+	// region + internal X/Y underground (what npcpos/pk2 data actually stores).
+	var formatReadout = function(coord){
+		if(coord.region > 32767)
+			return 'Rgn '+coord.region+' &middot; X '+coord.x+' Y '+coord.y;
+		return 'PosX '+Math.round(coord.posX)+' &middot; PosY '+Math.round(coord.posY);
 	};
 	var initEvents = function(){
+		// live coordinate readout follows the cursor
+		map.on('mousemove', function(e){
+			if(coordReadoutEl)
+				coordReadoutEl.innerHTML = formatReadout(CoordMapToSRO(e.latlng));
+		});
+		map.on('mouseout', function(){
+			if(coordReadoutEl)
+				coordReadoutEl.innerHTML = '';
+		});
 		// show SRO coordinates on click
 		map.on('dblclick', function (e){
 			// add game coords
@@ -419,6 +454,24 @@ var xSROMap = function(){
 		}
 		// using x,y,z,region internal silkroad coords
 		return {'x':x,'y':y,'z':z,'region':region};
+	};
+	// Build a shareable deep-link URL for an already-fixed coord. Uses the IC
+	// (x,y,z,region) form so it round-trips through fixCoords on load, same as
+	// the popup copy button - works for both world and dungeon coords.
+	var shareURLFor = function(coord){
+		return window.location.href.split(/\?|#/)[0]+'?x='+coord.x+'&y='+coord.y+'&z='+coord.z+'&region='+coord.region;
+	};
+	// Brief on-map confirmation toast (e.g. after copying a link).
+	var toast = function(message){
+		var el = L.DomUtil.create('div', 'xsro-toast', map.getContainer());
+		el.textContent = message;
+		// force a reflow so the fade-in transition actually runs
+		el.offsetWidth;
+		L.DomUtil.addClass(el, 'xsro-toast-show');
+		setTimeout(function(){
+			L.DomUtil.removeClass(el, 'xsro-toast-show');
+			setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 300);
+		}, 1600);
 	};
 	// Copy text to clipboard
 	var toClipboard = function(text){
@@ -691,8 +744,8 @@ var xSROMap = function(){
 			}
 		},
 		LinkToClipboard(x,y,z=null,region=null){
-			var coord = fixCoords(x,y,z,region);
-			toClipboard(window.location.href.split(/\?|#/)[0]+'?x='+coord.x+'&y='+coord.y+'&z='+coord.z+'&region='+coord.region);
+			toClipboard(shareURLFor(fixCoords(x,y,z,region)));
+			toast('Link copied');
 		},
 		// Toolbar for drawing and editing geometry shapes
 		ShowDrawingToolbar(position,drawMarker,drawCircleMarker,drawPolyline,drawRectangle,drawPolygon,drawCircle,canEdit,canDrag,canCut,canDelete){
