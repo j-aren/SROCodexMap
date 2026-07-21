@@ -125,6 +125,11 @@ var xSROMap = function(){
 			crs: L.CRS.Simple,
 			minZoom:0,maxZoom:9,zoomControl:false
 		});
+		// Dedicated panes for NPC and teleporter markers so the Layers toggles
+		// can hide a whole type with one CSS switch, without disturbing the
+		// per-viewport virtualization that manages individual icons.
+		map.createPane('markers-npc').style.zIndex = 600;
+		map.createPane('markers-tp').style.zIndex = 600;
 		new L.Control.Zoom({ position: 'topright' }).addTo(map);
 		// Drop the attribution prefix - upstream patched the Leaflet bundle to
 		// point it at JellyBitz's own hosted map. The MIT credit lives in the
@@ -469,7 +474,8 @@ var xSROMap = function(){
 
 			// init highlight
 			lastMarkerSelected = null;
-			// Add markers from the new layer
+			// Add markers from the new layer (per-type show/hide is handled by
+			// pane visibility, which persists across layer changes)
 			for (var type in mappingMarkers){
 				for (var id in mappingMarkers[type]){
 					var marker = mappingMarkers[type][id];
@@ -666,7 +672,7 @@ var xSROMap = function(){
 					popupAnchor:[0,-3] // (0,-h/2)
 				});
 				// create marker virtualized
-				var marker = L.marker(CoordSROToMap(coord),{icon:iconNPC,pmIgnore:true,virtual:true}).bindPopup(html);
+				var marker = L.marker(CoordSROToMap(coord),{icon:iconNPC,pane:'markers-npc',pmIgnore:true,virtual:true}).bindPopup(html);
 				// Check if is from the current layer
 				var layer = getLayer(coord);
 				if(layer == mapLayer)
@@ -724,7 +730,7 @@ var xSROMap = function(){
 					break;
 			}
 			// create marker virtualized
-			var marker = L.marker(CoordSROToMap(coord),{icon:iconNPC,pmIgnore:true,virtual:true}).bindPopup(html);
+			var marker = L.marker(CoordSROToMap(coord),{icon:iconNPC,pane:'markers-tp',pmIgnore:true,virtual:true}).bindPopup(html);
 			// Check if is from the current layer
 			var layer = getLayer(coord);
 			if(layer == mapLayer)
@@ -733,6 +739,14 @@ var xSROMap = function(){
 			// keep register to not get lost on changing layers
 			var id = Object.keys(mappingMarkers['tp']).length;
 			mappingMarkers['tp'][id] = marker;
+		},
+		// Show or hide a whole marker type on the map by toggling its pane.
+		// 'npc' and 'tp' have dedicated panes; the markers stay on the map, only
+		// the pane's visibility changes, so virtualization is left untouched.
+		SetTypeVisible(type, visible){
+			var pane = map.getPane('markers-'+type);
+			if(pane)
+				pane.style.display = visible ? '' : 'none';
 		},
 		AddPlayer(id,html,x,y,z=null,region=null){
 			// Add only new ones
