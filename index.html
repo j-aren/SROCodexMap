@@ -261,6 +261,30 @@
 					</ul>
 				</div>
 				<!-- sidebar-menu  -->
+
+				<!-- layer toggles  -->
+				<div id="layers" class="sidebar-menu">
+					<ul>
+						<li class="header-menu">
+							<span>Layers</span>
+						</li>
+						<li class="layer-toggle">
+							<label>
+								<input type="checkbox" checked onchange="xSROMap.SetTypeVisible('npc', this.checked)">
+								<i class="fa fa-user-shield"></i>
+								<span>NPCs</span>
+							</label>
+						</li>
+						<li class="layer-toggle">
+							<label>
+								<input type="checkbox" checked onchange="xSROMap.SetTypeVisible('tp', this.checked)">
+								<i class="fa fa-dungeon"></i>
+								<span>Teleporters</span>
+							</label>
+						</li>
+					</ul>
+				</div>
+				<!-- sidebar-menu  -->
 			</div>
 			<!-- sidebar-content  -->
 			<div class="sidebar-footer">
@@ -348,10 +372,10 @@
 							<li>The bottom-right label now shows the current map layer instead of an external link.</li>
 							<li>Added a distance measurement tool (ruler button): click points to measure a path, Esc to finish.</li>
 							<li>The drawing tools (top-right) now have tooltips explaining what each one does.</li>
+							<li>Added Layers toggles in the sidebar to show or hide NPCs and teleporters.</li>
 						</ul>
 						<h6 class="changelog-heading">Planned</h6>
 						<ul>
-							<li>Show/hide toggles for NPCs and teleporters.</li>
 							<li>Text search for NPCs and areas.</li>
 							<li>Monster spawn locations.</li>
 						</ul>
