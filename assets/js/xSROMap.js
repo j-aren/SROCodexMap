@@ -62,6 +62,12 @@ var xSROMap = function(){
 	var measureDots = [];
 	var measureReadoutEl = null;
 	var measureBtnEl = null;
+	// monster spawn overlay state
+	var monsterData = null;       // lazily-loaded spawn data, keyed by mob id
+	var monsterShapes = [];       // shapes currently drawn for the selected monster
+	// themed styling for the spawn area (dotted gold outline, translucent fill)
+	var MONSTER_AREA_STYLE = {color:'#d9b25f',weight:2,dashArray:'2,6',fillColor:'#d9b25f',fillOpacity:0.18,fillRule:'evenodd',interactive:false,pmIgnore:true};
+	var MONSTER_DOT_STYLE  = {radius:2.5,color:'#e8dcc3',weight:1,fillColor:'#d9b25f',fillOpacity:1,interactive:false,pmIgnore:true};
 	var lastMarkerSelected;
 	// mapping
 	var mappingLayers = {};
@@ -346,6 +352,11 @@ var xSROMap = function(){
 	};
 	var toggleMeasure = function(){
 		measuring ? stopMeasure() : startMeasure();
+	};
+	// remove any currently-drawn monster spawn shapes
+	var clearMonsterShapes = function(){
+		monsterShapes.forEach(function(s){ map.removeLayer(s); });
+		monsterShapes = [];
 	};
 	var initEvents = function(){
 		// live coordinate readout follows the cursor
@@ -747,6 +758,39 @@ var xSROMap = function(){
 			var pane = map.getPane('markers-'+type);
 			if(pane)
 				pane.style.display = visible ? '' : 'none';
+		},
+		// Lazily fetch the monster spawn data (once) and hand it to callback.
+		LoadMonsterSpawns(callback){
+			if(monsterData){ callback(monsterData); return; }
+			fetch('assets/data/monster-spawns.json')
+				.then(function(r){ return r.json(); })
+				.then(function(d){ monsterData = d; callback(d); })
+				.catch(function(){ callback(null); });
+		},
+		// Draw a monster's spawn area(s) + points, then frame them.
+		ShowMonsterSpawns(id){
+			this.LoadMonsterSpawns(function(data){
+				if(!data || !data[String(id)]) return;
+				var m = data[String(id)];
+				clearMonsterShapes();
+				// these are world-layer spawns; make sure the world layer is showing
+				if(mapLayer != mappingLayers[''])
+					setMapLayer(mappingLayers['']);
+				var all = [];
+				m.areas.forEach(function(ring){
+					monsterShapes.push(L.polygon(ring, MONSTER_AREA_STYLE).addTo(map));
+					all = all.concat(ring);
+				});
+				m.dots.forEach(function(d){
+					monsterShapes.push(L.circleMarker(d, MONSTER_DOT_STYLE).addTo(map));
+					all.push(d);
+				});
+				if(all.length)
+					map.fitBounds(L.latLngBounds(all), {padding:[50,50], maxZoom:7});
+			});
+		},
+		ClearMonsterSpawns(){
+			clearMonsterShapes();
 		},
 		AddPlayer(id,html,x,y,z=null,region=null){
 			// Add only new ones

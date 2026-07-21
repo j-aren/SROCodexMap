@@ -285,6 +285,21 @@
 					</ul>
 				</div>
 				<!-- sidebar-menu  -->
+
+				<!-- monster spawn picker  -->
+				<div id="monsters" class="sidebar-menu">
+					<ul>
+						<li class="header-menu">
+							<span>Monster Spawns</span>
+						</li>
+						<li class="monster-picker">
+							<input type="text" class="form-control" id="monsterSearch" list="monster-list" placeholder="Find a monster…" autocomplete="off">
+							<datalist id="monster-list"></datalist>
+							<a href="#" id="monsterClear" class="monster-clear">Clear</a>
+						</li>
+					</ul>
+				</div>
+				<!-- sidebar-menu  -->
 			</div>
 			<!-- sidebar-content  -->
 			<div class="sidebar-footer">
@@ -373,11 +388,12 @@
 							<li>Added a distance measurement tool (ruler button): click points to measure a path, Esc to finish.</li>
 							<li>The drawing tools (top-right) now have tooltips explaining what each one does.</li>
 							<li>Added Layers toggles in the sidebar to show or hide NPCs and teleporters.</li>
+							<li>Added Monster Spawns: pick a monster to see the area where it spawns, mapped from its in-game spawn points.</li>
 						</ul>
 						<h6 class="changelog-heading">Planned</h6>
 						<ul>
+							<li>Monster spawns: cut town areas out of the zone, and support dungeon monsters.</li>
 							<li>Text search for NPCs and areas.</li>
-							<li>Monster spawn locations.</li>
 						</ul>
 					</div>
 				</div>

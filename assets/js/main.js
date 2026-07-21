@@ -33,6 +33,43 @@ for(var i=0;i<TPs.length;i++)
 // Activate drawing creator
 xSROMap.ShowDrawingToolbar('topright',true,false,true,false,true,true,true,true,false,true);
 
+// Monster spawn picker: type/pick a monster -> draw its spawn area on the map
+(function(){
+	var nameToId = null;
+	var input = document.getElementById('monsterSearch');
+	// Load the spawn data once (on first focus) and fill the autocomplete list
+	var populate = function(){
+		if(nameToId !== null) return;
+		nameToId = {};
+		xSROMap.LoadMonsterSpawns(function(data){
+			if(!data) return;
+			var dl = document.getElementById('monster-list');
+			var frag = document.createDocumentFragment();
+			Object.keys(data).forEach(function(id){
+				var m = data[id];
+				var lvl = m.minLevel ? ' (Lv.'+m.minLevel+(m.maxLevel && m.maxLevel!=m.minLevel ? '-'+m.maxLevel : '')+')' : '';
+				var label = m.name + lvl;
+				nameToId[label.toLowerCase()] = id;
+				nameToId[(m.name||'').toLowerCase()] = id;   // also match the bare name
+				var opt = document.createElement('option');
+				opt.value = label;
+				frag.appendChild(opt);
+			});
+			dl.appendChild(frag);
+		});
+	};
+	input.addEventListener('focus', populate);
+	input.addEventListener('change', function(){
+		var id = nameToId && nameToId[this.value.trim().toLowerCase()];
+		if(id) xSROMap.ShowMonsterSpawns(id);
+	});
+	document.getElementById('monsterClear').addEventListener('click', function(e){
+		e.preventDefault();
+		input.value = '';
+		xSROMap.ClearMonsterSpawns();
+	});
+})();
+
 // Examples about how to add shapes
 //xSROMap.AddDrawingShape('Marker',[113,-205],'<b>Hotan Kingdom (S)</b>');
 //xSROMap.AddDrawingShape('Polyline',[[115,255],[115,368],[115,428]],'<b>City to Palace</b>');
