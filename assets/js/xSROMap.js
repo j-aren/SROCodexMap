@@ -777,9 +777,11 @@ var xSROMap = function(){
 				if(mapLayer != mappingLayers[''])
 					setMapLayer(mappingLayers['']);
 				var all = [];
-				m.areas.forEach(function(ring){
-					monsterShapes.push(L.polygon(ring, MONSTER_AREA_STYLE).addTo(map));
-					all = all.concat(ring);
+				m.areas.forEach(function(area){
+					// [outer, ...townHoles]; evenodd fill renders the holes as cut-outs
+					var rings = [area.outer].concat(area.holes || []);
+					monsterShapes.push(L.polygon(rings, MONSTER_AREA_STYLE).addTo(map));
+					all = all.concat(area.outer);
 				});
 				m.dots.forEach(function(d){
 					monsterShapes.push(L.circleMarker(d, MONSTER_DOT_STYLE).addTo(map));
