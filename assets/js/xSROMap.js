@@ -811,9 +811,11 @@ var xSROMap = function(){
 				pane.style.display = visible ? '' : 'none';
 		},
 		// Lazily fetch the monster spawn data (once) and hand it to callback.
+		// The ?v is bumped whenever the data file is regenerated so browsers don't
+		// serve a stale cached copy.
 		LoadMonsterSpawns(callback){
 			if(monsterData){ callback(monsterData); return; }
-			fetch('assets/data/monster-spawns.json')
+			fetch('assets/data/monster-spawns.json?v=8')
 				.then(function(r){ return r.json(); })
 				.then(function(d){ monsterData = d; callback(d); })
 				.catch(function(){ callback(null); });

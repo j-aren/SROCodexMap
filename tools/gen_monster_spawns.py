@@ -42,6 +42,20 @@ PALETTE = ["#e0662f", "#3d8ad6", "#e8c53a", "#2fb38a", "#d63d7a",
            "#8ad63d", "#d64545", "#3dd6d6", "#e89a3a", "#5a9e5a"]
 UNIQUE_COLOR = "#a94fd6"
 
+# Dungeon region -> zone name (from the map's own layer names). A mob whose main
+# spawn layer is one of these is grouped under the dungeon, not the generic zone
+# the source data tags it with (e.g. Donwhang cave mobs are tagged "Donwhang").
+DUNGEON_ZONES = {
+    32769: "Donwhang Stone Cave",
+    32770: "Tomb of Qui-Shin", 32771: "Tomb of Qui-Shin", 32772: "Tomb of Qui-Shin",
+    32773: "Tomb of Qui-Shin", 32774: "Tomb of Qui-Shin", 32775: "Tomb of Qui-Shin",
+    32779: "Sanctum of Blue Eye", 32780: "Sanctum of Anubis", 32781: "Sanctum of Isis",
+    32782: "Sanctum of Haroeris", 32783: "Sanctum of Seth", 32784: "Temple",
+    32785: "Cave of Meditation", 32786: "Flame Mountain",
+    32787: "The Earth's Room", 32788: "Yuno's Room", 32789: "Jupiter's Room",
+    32790: "Zealots Hideout", 32793: "Kalia's Hideout",
+}
+
 def assign_colors(out, monsters):
     """Colour each mob: uniques purple, regulars cycling a palette per zone."""
     per_zone = {}
@@ -220,9 +234,14 @@ def main():
             stats["total_vertices"] += sum(len(r) for r in rings)
             if layer["region"]:
                 stats["dungeon_layers"] += 1
+        # group a dungeon-dwelling mob under its dungeon, not the generic zone
+        zone = m.get("region")
+        if layers:
+            primary = max(layers, key=lambda L: len(L["dots"]))
+            zone = DUNGEON_ZONES.get(primary["region"], zone)
         out[str(mob)] = {
             "name": m.get("name"), "minLevel": m.get("minLevel"),
-            "maxLevel": m.get("maxLevel"), "region": m.get("region"),
+            "maxLevel": m.get("maxLevel"), "region": zone,
             "rarity": m.get("rarity"), "layers": layers,
         }
 
