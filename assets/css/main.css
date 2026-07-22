@@ -256,17 +256,79 @@ body {
 .sidebar-wrapper .sidebar-menu .monster-picker {
 	padding: 4px 20px 2px;
 }
-.sidebar-wrapper .sidebar-menu .monster-picker input {
+.monster-input {
+	width: 100%;
 	font-size: 13px;
+	color: var(--text);
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-radius: 4px;
+	padding: 6px 8px;
 }
-.sidebar-wrapper .sidebar-menu .monster-picker .monster-clear {
-	display: inline-block;
-	margin-top: 6px;
+.monster-input:focus {
+	outline: none;
+	border-color: var(--accent);
+}
+.sidebar-wrapper .sidebar-menu .monster-modes {
+	padding: 4px 20px 6px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+.monster-btn {
+	background: var(--surface);
+	color: var(--text-dim);
+	border: 1px solid var(--border);
+	border-radius: 4px;
+	padding: 4px 10px;
+	font-size: 12px;
+	cursor: pointer;
+}
+.monster-btn:hover {
+	color: var(--text);
+	border-color: var(--accent);
+}
+.monster-zone {
+	flex-basis: 100%;
+	margin-top: 2px;
+}
+.monster-legend {
+	max-height: 210px;
+	overflow-y: auto;
+	padding: 0 20px;
+}
+.monster-legend .legend-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 3px 0;
+	font-size: 12px;
+	color: var(--text-dim);
+	cursor: pointer;
+}
+.monster-legend .legend-row:hover {
+	color: var(--text);
+}
+.monster-legend .swatch {
+	width: 12px;
+	height: 12px;
+	border-radius: 3px;
+	flex-shrink: 0;
+}
+.monster-legend .legend-note {
+	font-size: 11px;
+	color: var(--text-dim);
+	padding: 4px 0;
+}
+.monster-foot {
+	padding: 6px 20px;
+}
+.monster-clear {
 	font-size: 11px;
 	color: var(--text-dim);
 	text-decoration: underline;
 }
-.sidebar-wrapper .sidebar-menu .monster-picker .monster-clear:hover {
+.monster-clear:hover {
 	color: var(--text);
 }
 .sidebar-wrapper .sidebar-menu ul li a:hover > i::before{

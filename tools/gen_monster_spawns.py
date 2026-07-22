@@ -35,6 +35,26 @@ BUFFER       = 0.45   # roaming radius around each spawn (map units)
 CELL         = 0.08   # marching-squares grid resolution
 SIMPLIFY     = 0.05   # Douglas-Peucker tolerance for the traced outline
 
+# Regular mobs get a colour per zone (distinct within a zone; a colour may repeat
+# in another zone). Uniques are all one colour. Used when several mobs are shown
+# at once (all / uniques / a whole zone).
+PALETTE = ["#e0662f", "#3d8ad6", "#e8c53a", "#2fb38a", "#d63d7a",
+           "#8ad63d", "#d64545", "#3dd6d6", "#e89a3a", "#5a9e5a"]
+UNIQUE_COLOR = "#a94fd6"
+
+def assign_colors(out, monsters):
+    """Colour each mob: uniques purple, regulars cycling a palette per zone."""
+    per_zone = {}
+    for mob_id in sorted(out, key=lambda k: (out[k].get("region") or "~", int(k))):
+        m = out[mob_id]
+        if m.get("rarity") == "Unique":
+            m["color"] = UNIQUE_COLOR
+        else:
+            zone = m.get("region") or "_none"
+            i = per_zone.get(zone, 0)
+            m["color"] = PALETTE[i % len(PALETTE)]
+            per_zone[zone] = i + 1
+
 def region_to_latlng(region, X, Z):
     """Region-local (X, Z) in a world region -> the map's lat/lng."""
     return (round(((region >> 8) & 0xFF) + Z / 1920.0 - 1, 4),
@@ -177,6 +197,8 @@ def main():
         stats["total_points"] += len(pts)
         stats["total_areas"] += len(rings)
         stats["total_vertices"] += sum(len(r) for r in rings)
+
+    assign_colors(out, monsters)
 
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as f:

@@ -33,39 +33,89 @@ for(var i=0;i<TPs.length;i++)
 // Activate drawing creator
 xSROMap.ShowDrawingToolbar('topright',true,false,true,false,true,true,true,true,false,true);
 
-// Monster spawn picker: type/pick a monster -> draw its spawn area on the map
+// Monster spawns UI: pick one, or show a whole set (all / uniques / a zone) with
+// a colour legend
 (function(){
-	var nameToId = null;
-	var input = document.getElementById('monsterSearch');
-	// Load the spawn data once (on first focus) and fill the autocomplete list
+	var data = null, nameToId = null;
+	var input    = document.getElementById('monsterSearch');
+	var legendEl = document.getElementById('monster-legend');
+	var zoneSel  = document.getElementById('showZone');
+
+	var lvl = function(m){
+		return m.minLevel ? ' Lv.'+m.minLevel+(m.maxLevel && m.maxLevel!=m.minLevel ? '-'+m.maxLevel : '') : '';
+	};
+	var load = function(cb){
+		if(data){ cb(data); return; }
+		xSROMap.LoadMonsterSpawns(function(d){ data = d || {}; cb(data); });
+	};
+
+	// One-time: fill the autocomplete list + the zone dropdown
+	var ready = false;
 	var populate = function(){
-		if(nameToId !== null) return;
-		nameToId = {};
-		xSROMap.LoadMonsterSpawns(function(data){
-			if(!data) return;
+		if(ready) return; ready = true;
+		load(function(d){
+			nameToId = {};
 			var dl = document.getElementById('monster-list');
 			var frag = document.createDocumentFragment();
-			Object.keys(data).forEach(function(id){
-				var m = data[id];
-				var lvl = m.minLevel ? ' (Lv.'+m.minLevel+(m.maxLevel && m.maxLevel!=m.minLevel ? '-'+m.maxLevel : '')+')' : '';
-				var label = m.name + lvl;
+			var zones = {};
+			Object.keys(d).forEach(function(id){
+				var m = d[id];
+				var label = m.name + lvl(m);
 				nameToId[label.toLowerCase()] = id;
-				nameToId[(m.name||'').toLowerCase()] = id;   // also match the bare name
-				var opt = document.createElement('option');
-				opt.value = label;
-				frag.appendChild(opt);
+				nameToId[(m.name||'').toLowerCase()] = id;
+				frag.appendChild(new Option(label));
+				if(m.region) zones[m.region] = 1;
 			});
 			dl.appendChild(frag);
+			Object.keys(zones).sort().forEach(function(z){ zoneSel.appendChild(new Option(z, z)); });
 		});
 	};
+	document.getElementById('monsters').addEventListener('mouseenter', populate);
 	input.addEventListener('focus', populate);
+
+	// Build the colour legend for a shown set (click a row to isolate that mob)
+	var buildLegend = function(mobs){
+		legendEl.innerHTML = '';
+		if(mobs.length > 60){
+			legendEl.innerHTML = '<div class="legend-note">'+mobs.length+' monsters shown — click an area on the map to name it.</div>';
+			return;
+		}
+		mobs.sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); });
+		mobs.forEach(function(x){
+			var row = document.createElement('div');
+			row.className = 'legend-row';
+			row.innerHTML = '<span class="swatch" style="background:'+x.color+'"></span>'+x.name+lvl(x);
+			row.addEventListener('click', function(){ xSROMap.ShowMonsterSpawns(x.id); });
+			legendEl.appendChild(row);
+		});
+	};
+	var showSet = function(filter){
+		load(function(d){
+			xSROMap.ShowMonsterSet(filter);
+			var mobs = [];
+			for(var id in d)
+				if(filter(d[id])){ var m = d[id]; mobs.push({id:id, name:m.name, color:m.color, minLevel:m.minLevel, maxLevel:m.maxLevel}); }
+			buildLegend(mobs);
+		});
+	};
+
 	input.addEventListener('change', function(){
 		var id = nameToId && nameToId[this.value.trim().toLowerCase()];
-		if(id) xSROMap.ShowMonsterSpawns(id);
+		if(id){ xSROMap.ShowMonsterSpawns(id); legendEl.innerHTML = ''; }
+	});
+	document.getElementById('showAllMobs').addEventListener('click', function(){
+		zoneSel.value = ''; showSet(function(m){ return true; });
+	});
+	document.getElementById('showUniques').addEventListener('click', function(){
+		zoneSel.value = ''; showSet(function(m){ return m.rarity === 'Unique'; });
+	});
+	zoneSel.addEventListener('change', function(){
+		var z = this.value;
+		if(z) showSet(function(m){ return m.region === z; });
 	});
 	document.getElementById('monsterClear').addEventListener('click', function(e){
 		e.preventDefault();
-		input.value = '';
+		input.value = ''; zoneSel.value = ''; legendEl.innerHTML = '';
 		xSROMap.ClearMonsterSpawns();
 	});
 })();
