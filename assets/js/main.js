@@ -73,13 +73,10 @@ xSROMap.ShowDrawingToolbar('topright',true,false,true,false,true,true,true,true,
 	document.getElementById('monsters').addEventListener('mouseenter', populate);
 	input.addEventListener('focus', populate);
 
-	// Build the colour legend for a shown set (click a row to isolate that mob)
+	// Build the legend for a set: a colour swatch + name per mob. Click a row to
+	// draw that one mob's spawns (nothing is drawn until you pick one).
 	var buildLegend = function(mobs){
 		legendEl.innerHTML = '';
-		if(mobs.length > 60){
-			legendEl.innerHTML = '<div class="legend-note">'+mobs.length+' monsters shown — click an area on the map to name it.</div>';
-			return;
-		}
 		mobs.sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); });
 		mobs.forEach(function(x){
 			var row = document.createElement('div');
@@ -89,9 +86,10 @@ xSROMap.ShowDrawingToolbar('topright',true,false,true,false,true,true,true,true,
 			legendEl.appendChild(row);
 		});
 	};
+	// Frame a set (zone / uniques) and list its mobs; don't draw them all at once.
 	var showSet = function(filter){
 		load(function(d){
-			xSROMap.ShowMonsterSet(filter);
+			xSROMap.ZoomToMonsterSet(filter);
 			var mobs = [];
 			for(var id in d)
 				if(filter(d[id])){ var m = d[id]; mobs.push({id:id, name:m.name, color:m.color, minLevel:m.minLevel, maxLevel:m.maxLevel}); }
@@ -102,9 +100,6 @@ xSROMap.ShowDrawingToolbar('topright',true,false,true,false,true,true,true,true,
 	input.addEventListener('change', function(){
 		var id = nameToId && nameToId[this.value.trim().toLowerCase()];
 		if(id){ xSROMap.ShowMonsterSpawns(id); legendEl.innerHTML = ''; }
-	});
-	document.getElementById('showAllMobs').addEventListener('click', function(){
-		zoneSel.value = ''; showSet(function(m){ return true; });
 	});
 	document.getElementById('showUniques').addEventListener('click', function(){
 		zoneSel.value = ''; showSet(function(m){ return m.rarity === 'Unique'; });

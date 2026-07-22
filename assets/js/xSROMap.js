@@ -798,26 +798,29 @@ var xSROMap = function(){
 					map.fitBounds(L.latLngBounds(all), {padding:[50,50], maxZoom:7});
 			});
 		},
-		// Draw every monster whose data passes filter(m) - each in its own colour,
-		// areas only (no dots), framed to fit them all. Used for all / uniques / a zone.
-		ShowMonsterSet(filter){
+		// Clear the map and zoom to frame a filtered set of monsters (e.g. a zone)
+		// without drawing them - the legend lists them and you click one to show it.
+		// Trims outliers (5th-95th percentile) so it zooms INTO the zone core.
+		ZoomToMonsterSet(filter){
 			this.LoadMonsterSpawns(function(data){
 				if(!data) return;
 				clearMonsterShapes();
 				if(mapLayer != mappingLayers[''])
 					setMapLayer(mappingLayers['']);
-				var all = [];
-				for(var id in data){
+				var pts = [];
+				for(var id in data)
 					if(filter(data[id]))
-						all = all.concat(drawMonster(data[id], false));
-				}
-				if(all.length)
-					map.fitBounds(L.latLngBounds(all), {padding:[30,30]});
+						pts = pts.concat(data[id].dots || []);
+				if(!pts.length) return;
+				var lats = pts.map(function(p){ return p[0]; }).sort(function(a,b){ return a-b; });
+				var lngs = pts.map(function(p){ return p[1]; }).sort(function(a,b){ return a-b; });
+				// interquartile range zooms into the zone's dense core - some mobs are
+				// tagged to a zone but spawn far away, and 5-95% still spanned the map
+				var q = function(a,p){ return a[Math.floor(p*(a.length-1))]; };
+				map.fitBounds([[q(lats,0.25), q(lngs,0.25)], [q(lats,0.75), q(lngs,0.75)]],
+					{padding:[50,50], maxZoom:7});
 			});
 		},
-		ShowAllMonsters(){ this.ShowMonsterSet(function(m){ return true; }); },
-		ShowUniqueMonsters(){ this.ShowMonsterSet(function(m){ return m.rarity === 'Unique'; }); },
-		ShowRegionMonsters(region){ this.ShowMonsterSet(function(m){ return m.region === region; }); },
 		ClearMonsterSpawns(){
 			clearMonsterShapes();
 		},
