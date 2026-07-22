@@ -55,27 +55,49 @@ def assign_colors(out, monsters):
             m["color"] = PALETTE[i % len(PALETTE)]
             per_zone[zone] = i + 1
 
-def region_to_latlng(region, X, Z):
-    """Region-local (X, Z) in a world region -> the map's lat/lng."""
+def project(region, X, Z):
+    """Region-local (X, Z) -> the map's lat/lng, mirroring CoordSROToMap.
+    Dungeon regions are stored NEGATIVE in npcpos; they use the dungeon branch
+    (every dungeon shares the ~(127,128) space but lives on its own tile layer)."""
+    if region < 0:
+        return (round(127 + Z / 1920.0, 4), round(128 + X / 1920.0, 4))
     return (round(((region >> 8) & 0xFF) + Z / 1920.0 - 1, 4),
             round((region & 0xFF) + X / 1920.0, 4))
 
 def read_spawns(path):
+    """mobId -> list of (regionSigned, X, Yheight, Z) spawn rows."""
     spawns = {}
     with open(path, encoding="utf-16") as f:
         for line in f:
             c = line.rstrip("\n").split("\t")
             if len(c) < 5 or not c[0].lstrip("-").isdigit():
                 continue
-            region = int(c[1])
-            if region > 32767:
-                continue
             try:
-                X, Z = float(c[2]), float(c[4])
+                r, X, Yh, Z = int(c[1]), float(c[2]), float(c[3]), float(c[4])
             except ValueError:
                 continue
-            spawns.setdefault(int(c[0]), []).append(region_to_latlng(region, X, Z))
+            spawns.setdefault(int(c[0]), []).append((r, X, Yh, Z))
     return spawns
+
+def mob_layers(spawns):
+    """Split a mob's spawns into map layers. World spawns -> one layer
+    (region 0). Dungeon spawns -> one layer per dungeon region; z is the median
+    height so the map's overlap logic can pick the right floor. Returns list of
+    {region, z, pts(lat/lng)}."""
+    layers = []
+    world = [(r, X, Z) for (r, X, Yh, Z) in spawns if r >= 0]
+    if world:
+        layers.append({"region": 0, "z": 0,
+                       "pts": [project(r, X, Z) for (r, X, Z) in world]})
+    byreg = {}
+    for (r, X, Yh, Z) in spawns:
+        if r < 0:
+            byreg.setdefault(r + 65536, []).append((X, Yh, Z))
+    for ureg, items in byreg.items():
+        yhs = sorted(it[1] for it in items)
+        layers.append({"region": ureg, "z": round(yhs[len(yhs) // 2], 2),
+                       "pts": [project(-1, X, Z) for (X, Yh, Z) in items]})
+    return layers
 
 def cluster(points, dist):
     n = len(points); parent = list(range(n))
@@ -178,25 +200,31 @@ def main():
     monsters = {m["id"]: m for m in json.load(open(args.monsters, encoding="utf-8-sig"))}
 
     out = {}
-    stats = {"total_points": 0, "total_areas": 0, "total_vertices": 0}
-    for mob, pts in spawns.items():
+    stats = {"total_points": 0, "total_areas": 0, "total_vertices": 0, "dungeon_layers": 0}
+    for mob, spawns_rows in spawns.items():
         m = monsters.get(mob)
         if not m:
             continue
-        rings = []
-        for c in cluster(pts, CLUSTER_DIST):
-            for ring in trace_area(c, BUFFER, CELL):
-                sr = simplify_ring(ring, SIMPLIFY)
-                if len(sr) >= 3:
-                    rings.append(sr)
+        layers = []
+        for layer in mob_layers(spawns_rows):
+            rings = []
+            for c in cluster(layer["pts"], CLUSTER_DIST):
+                for ring in trace_area(c, BUFFER, CELL):
+                    sr = simplify_ring(ring, SIMPLIFY)
+                    if len(sr) >= 3:
+                        rings.append(sr)
+            layers.append({"region": layer["region"], "z": layer["z"],
+                           "areas": rings, "dots": layer["pts"]})
+            stats["total_points"] += len(layer["pts"])
+            stats["total_areas"] += len(rings)
+            stats["total_vertices"] += sum(len(r) for r in rings)
+            if layer["region"]:
+                stats["dungeon_layers"] += 1
         out[str(mob)] = {
             "name": m.get("name"), "minLevel": m.get("minLevel"),
             "maxLevel": m.get("maxLevel"), "region": m.get("region"),
-            "rarity": m.get("rarity"), "areas": rings, "dots": pts,
+            "rarity": m.get("rarity"), "layers": layers,
         }
-        stats["total_points"] += len(pts)
-        stats["total_areas"] += len(rings)
-        stats["total_vertices"] += sum(len(r) for r in rings)
 
     assign_colors(out, monsters)
 
@@ -207,6 +235,7 @@ def main():
     print(f"monsters emitted:  {len(out)}")
     print(f"spawn points:      {stats['total_points']}")
     print(f"areas (rings):     {stats['total_areas']}")
+    print(f"dungeon layers:    {stats['dungeon_layers']}")
     print(f"avg vertices/ring: {stats['total_vertices']/max(stats['total_areas'],1):.1f}")
     print(f"output:            {os.path.relpath(args.out)}  ({size/1024:.0f} KB)")
 

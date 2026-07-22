@@ -358,24 +358,34 @@ var xSROMap = function(){
 		monsterShapes.forEach(function(s){ map.removeLayer(s); });
 		monsterShapes = [];
 	};
-	// draw one monster's area(s) in its colour; dots only when showing it alone.
-	// returns the latlngs (for framing). Areas are clickable to name the mob.
-	var drawMonster = function(m, withDots){
+	// Switch the map to the tile layer a spawn layer lives on (region 0 = world;
+	// a dungeon region resolves via getLayer, z picks the floor). Returns false
+	// if that dungeon has no defined tile layer (can't be shown).
+	var switchToMonsterLayer = function(region, z){
+		var layer = region ? getLayer({x:0, y:0, z:z||0, region:region}) : mappingLayers[''];
+		if(layer) setMapLayer(layer);
+		return !!layer;
+	};
+	// Draw one spawn layer's area(s)+dots in the mob's colour; returns the latlngs.
+	var drawMonster = function(layer, color, popup, withDots){
 		var all = [];
-		if(m.areas && m.areas.length){
-			var lvl = m.minLevel ? ' Lv.'+m.minLevel+(m.maxLevel && m.maxLevel!=m.minLevel ? '-'+m.maxLevel : '') : '';
-			var poly = L.polygon(m.areas, monsterAreaStyle(m.color)).addTo(map);
-			poly.bindPopup('<b>'+m.name+'</b>'+lvl);
+		if(layer.areas && layer.areas.length){
+			var poly = L.polygon(layer.areas, monsterAreaStyle(color)).addTo(map);
+			if(popup) poly.bindPopup(popup);
 			monsterShapes.push(poly);
-			m.areas.forEach(function(r){ all = all.concat(r); });
+			layer.areas.forEach(function(r){ all = all.concat(r); });
 		}
-		if(withDots && m.dots){
-			m.dots.forEach(function(d){
-				monsterShapes.push(L.circleMarker(d, monsterDotStyle(m.color)).addTo(map));
+		if(withDots && layer.dots){
+			layer.dots.forEach(function(d){
+				monsterShapes.push(L.circleMarker(d, monsterDotStyle(color)).addTo(map));
 				all.push(d);
 			});
 		}
 		return all;
+	};
+	// pick a mob's busiest spawn layer (most points)
+	var primaryLayer = function(m){
+		return (m.layers || []).slice().sort(function(a,b){ return b.dots.length - a.dots.length; })[0];
 	};
 	var initEvents = function(){
 		// live coordinate readout follows the cursor
@@ -786,39 +796,50 @@ var xSROMap = function(){
 				.then(function(d){ monsterData = d; callback(d); })
 				.catch(function(){ callback(null); });
 		},
-		// Draw one monster's spawn area + points and frame it.
+		// Draw one monster's spawn area + points on its busiest layer, and frame it.
+		// Switches to the right tile layer (world or a specific dungeon floor).
 		ShowMonsterSpawns(id){
 			this.LoadMonsterSpawns(function(data){
-				if(!data || !data[String(id)]) return;
+				var m = data && data[String(id)];
+				var layer = m && primaryLayer(m);
+				if(!layer) return;
 				clearMonsterShapes();
-				if(mapLayer != mappingLayers[''])   // spawns are world-layer
-					setMapLayer(mappingLayers['']);
-				var all = drawMonster(data[String(id)], true);
+				if(!switchToMonsterLayer(layer.region, layer.z))
+					return;                  // dungeon has no tile layer to show
+				var lvl = m.minLevel ? ' Lv.'+m.minLevel+(m.maxLevel && m.maxLevel!=m.minLevel ? '-'+m.maxLevel : '') : '';
+				var all = drawMonster(layer, m.color, '<b>'+m.name+'</b>'+lvl, true);
 				if(all.length)
-					map.fitBounds(L.latLngBounds(all), {padding:[50,50], maxZoom:7});
+					map.fitBounds(L.latLngBounds(all), {padding:[40,40], maxZoom: layer.region ? 9 : 8});
 			});
 		},
-		// Clear the map and zoom to frame a filtered set of monsters (e.g. a zone)
-		// without drawing them - the legend lists them and you click one to show it.
-		// Trims outliers (5th-95th percentile) so it zooms INTO the zone core.
+		// Clear the map and zoom to frame a filtered set (a zone) without drawing
+		// them - the legend lists them, click one to show it. Picks the set's
+		// dominant tile layer and zooms into its interquartile core.
 		ZoomToMonsterSet(filter){
 			this.LoadMonsterSpawns(function(data){
 				if(!data) return;
 				clearMonsterShapes();
-				if(mapLayer != mappingLayers[''])
-					setMapLayer(mappingLayers['']);
-				var pts = [];
-				for(var id in data)
-					if(filter(data[id]))
-						pts = pts.concat(data[id].dots || []);
-				if(!pts.length) return;
-				var lats = pts.map(function(p){ return p[0]; }).sort(function(a,b){ return a-b; });
-				var lngs = pts.map(function(p){ return p[1]; }).sort(function(a,b){ return a-b; });
-				// interquartile range zooms into the zone's dense core - some mobs are
-				// tagged to a zone but spawn far away, and 5-95% still spanned the map
+				var byLayer = {};   // region -> {region, z, dots}
+				for(var id in data){
+					if(!filter(data[id])) continue;
+					(data[id].layers || []).forEach(function(L){
+						if(!byLayer[L.region]) byLayer[L.region] = {region:L.region, z:L.z, dots:[]};
+						byLayer[L.region].dots = byLayer[L.region].dots.concat(L.dots);
+					});
+				}
+				var groups = Object.keys(byLayer).map(function(k){ return byLayer[k]; });
+				if(!groups.length) return;
+				groups.sort(function(a,b){ return b.dots.length - a.dots.length; });
+				var dom = groups[0];
+				if(!switchToMonsterLayer(dom.region, dom.z))
+					return;
+				var lats = dom.dots.map(function(p){ return p[0]; }).sort(function(a,b){ return a-b; });
+				var lngs = dom.dots.map(function(p){ return p[1]; }).sort(function(a,b){ return a-b; });
+				// interquartile range: some mobs are tagged to a zone but spawn far
+				// away, so the full span still covered the whole map
 				var q = function(a,p){ return a[Math.floor(p*(a.length-1))]; };
 				map.fitBounds([[q(lats,0.25), q(lngs,0.25)], [q(lats,0.75), q(lngs,0.75)]],
-					{padding:[50,50], maxZoom:7});
+					{padding:[40,40], maxZoom: dom.region ? 9 : 8});
 			});
 		},
 		ClearMonsterSpawns(){
