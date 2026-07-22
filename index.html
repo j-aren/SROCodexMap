@@ -36,7 +36,8 @@
 	<link rel="stylesheet" type="text/css" href="assets/js/leaflet/Leaflet.Geoman.css">
 	<link rel="stylesheet" type="text/css" href="assets/js/leaflet/Leaflet.Easy-Button.css">
 	<!-- My style -->
-	<link rel="stylesheet" type="text/css" href="assets/css/main.css">
+	<!-- ?v bumped on asset changes so browsers fetch fresh CSS/JS after a deploy -->
+	<link rel="stylesheet" type="text/css" href="assets/css/main.css?v=8">
 </head>
 <body>
 	<div class="page-wrapper jelly-theme toggled">
@@ -285,6 +286,28 @@
 					</ul>
 				</div>
 				<!-- sidebar-menu  -->
+
+				<!-- monster spawn picker  -->
+				<div id="monsters" class="sidebar-menu">
+					<ul>
+						<li class="header-menu">
+							<span>Monster Spawns</span>
+						</li>
+						<li class="monster-picker">
+							<input type="text" class="monster-input" id="monsterSearch" list="monster-list" placeholder="Find a monster…" autocomplete="off">
+							<datalist id="monster-list"></datalist>
+						</li>
+						<li class="monster-modes">
+							<button type="button" id="showUniques" class="monster-btn">Uniques</button>
+							<select id="showZone" class="monster-input monster-zone"><option value="">By zone…</option></select>
+						</li>
+					</ul>
+					<div id="monster-legend" class="monster-legend"></div>
+					<div class="monster-foot">
+						<a href="#" id="monsterClear" class="monster-clear">Clear</a>
+					</div>
+				</div>
+				<!-- sidebar-menu  -->
 			</div>
 			<!-- sidebar-content  -->
 			<div class="sidebar-footer">
@@ -373,11 +396,13 @@
 							<li>Added a distance measurement tool (ruler button): click points to measure a path, Esc to finish.</li>
 							<li>The drawing tools (top-right) now have tooltips explaining what each one does.</li>
 							<li>Added Layers toggles in the sidebar to show or hide NPCs and teleporters.</li>
+							<li>Added Monster Spawns: pick a monster to see the area where it spawns, mapped from its in-game spawn points. Town areas are cut out of the zone.</li>
+							<li>Monster Spawns: browse Uniques or a chosen zone &mdash; it zooms in and lists the mobs in a colour legend; click one to see where it spawns.</li>
+							<li>Monster Spawns now cover dungeon and cave monsters too, grouped by dungeon (e.g. Donwhang Stone Cave, Tomb of Qui-Shin) and shown on the correct floor.</li>
 						</ul>
-						<h6 class="changelog-heading">Planned</h6>
+						<h6 class="changelog-heading">In progress</h6>
 						<ul>
-							<li>Text search for NPCs and areas.</li>
-							<li>Monster spawn locations.</li>
+							<li>Instance dungeons with no fixed map tiles (such as Dimensional Desert) &mdash; their monster areas currently draw without a map background.</li>
 						</ul>
 					</div>
 				</div>
@@ -394,7 +419,7 @@
 	<script src="assets/js/leaflet/Leaflet.Geoman.min.js"></script>
 	<script src="assets/js/leaflet/Leaflet.Easy-Button.js"></script>
 	<!-- Main -->
-	<script src="assets/js/xSROMap.js"></script>
-	<script src="assets/js/main.js"></script>
+	<script src="assets/js/xSROMap.js?v=8"></script>
+	<script src="assets/js/main.js?v=8"></script>
 </body>
 </html>

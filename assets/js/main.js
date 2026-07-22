@@ -33,6 +33,88 @@ for(var i=0;i<TPs.length;i++)
 // Activate drawing creator
 xSROMap.ShowDrawingToolbar('topright',true,false,true,false,true,true,true,true,false,true);
 
+// Monster spawns UI: pick one, or show a whole set (all / uniques / a zone) with
+// a colour legend
+(function(){
+	var data = null, nameToId = null;
+	var input    = document.getElementById('monsterSearch');
+	var legendEl = document.getElementById('monster-legend');
+	var zoneSel  = document.getElementById('showZone');
+
+	var lvl = function(m){
+		return m.minLevel ? ' Lv.'+m.minLevel+(m.maxLevel && m.maxLevel!=m.minLevel ? '-'+m.maxLevel : '') : '';
+	};
+	var load = function(cb){
+		if(data){ cb(data); return; }
+		xSROMap.LoadMonsterSpawns(function(d){ data = d || {}; cb(data); });
+	};
+
+	// One-time: fill the autocomplete list + the zone dropdown
+	var ready = false;
+	var populate = function(){
+		if(ready) return; ready = true;
+		load(function(d){
+			nameToId = {};
+			var dl = document.getElementById('monster-list');
+			var frag = document.createDocumentFragment();
+			var zones = {};
+			Object.keys(d).forEach(function(id){
+				var m = d[id];
+				var label = m.name + lvl(m);
+				nameToId[label.toLowerCase()] = id;
+				nameToId[(m.name||'').toLowerCase()] = id;
+				frag.appendChild(new Option(label));
+				if(m.region) zones[m.region] = 1;
+			});
+			dl.appendChild(frag);
+			Object.keys(zones).sort().forEach(function(z){ zoneSel.appendChild(new Option(z, z)); });
+		});
+	};
+	document.getElementById('monsters').addEventListener('mouseenter', populate);
+	input.addEventListener('focus', populate);
+
+	// Build the legend for a set: a colour swatch + name per mob. Click a row to
+	// draw that one mob's spawns (nothing is drawn until you pick one).
+	var buildLegend = function(mobs){
+		legendEl.innerHTML = '';
+		mobs.sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); });
+		mobs.forEach(function(x){
+			var row = document.createElement('div');
+			row.className = 'legend-row';
+			row.innerHTML = '<span class="swatch" style="background:'+x.color+'"></span>'+x.name+lvl(x);
+			row.addEventListener('click', function(){ xSROMap.ShowMonsterSpawns(x.id); });
+			legendEl.appendChild(row);
+		});
+	};
+	// Frame a set (zone / uniques) and list its mobs; don't draw them all at once.
+	var showSet = function(filter){
+		load(function(d){
+			xSROMap.ZoomToMonsterSet(filter);
+			var mobs = [];
+			for(var id in d)
+				if(filter(d[id])){ var m = d[id]; mobs.push({id:id, name:m.name, color:m.color, minLevel:m.minLevel, maxLevel:m.maxLevel}); }
+			buildLegend(mobs);
+		});
+	};
+
+	input.addEventListener('change', function(){
+		var id = nameToId && nameToId[this.value.trim().toLowerCase()];
+		if(id){ xSROMap.ShowMonsterSpawns(id); legendEl.innerHTML = ''; }
+	});
+	document.getElementById('showUniques').addEventListener('click', function(){
+		zoneSel.value = ''; showSet(function(m){ return m.rarity === 'Unique'; });
+	});
+	zoneSel.addEventListener('change', function(){
+		var z = this.value;
+		if(z) showSet(function(m){ return m.region === z; });
+	});
+	document.getElementById('monsterClear').addEventListener('click', function(e){
+		e.preventDefault();
+		input.value = ''; zoneSel.value = ''; legendEl.innerHTML = '';
+		xSROMap.ClearMonsterSpawns();
+	});
+})();
+
 // Examples about how to add shapes
 //xSROMap.AddDrawingShape('Marker',[113,-205],'<b>Hotan Kingdom (S)</b>');
 //xSROMap.AddDrawingShape('Polyline',[[115,255],[115,368],[115,428]],'<b>City to Palace</b>');

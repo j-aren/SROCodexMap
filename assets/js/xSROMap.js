@@ -62,6 +62,12 @@ var xSROMap = function(){
 	var measureDots = [];
 	var measureReadoutEl = null;
 	var measureBtnEl = null;
+	// monster spawn overlay state
+	var monsterData = null;       // lazily-loaded spawn data, keyed by mob id
+	var monsterShapes = [];       // shapes currently drawn
+	// area/dot styles carry the mob's own colour (dotted outline, translucent fill)
+	var monsterAreaStyle = function(color){ return {color:color,weight:2,dashArray:'2,6',fillColor:color,fillOpacity:0.2,fillRule:'evenodd',pmIgnore:true}; };
+	var monsterDotStyle  = function(color){ return {radius:2.5,color:'#e8dcc3',weight:1,fillColor:color,fillOpacity:1,interactive:false,pmIgnore:true}; };
 	var lastMarkerSelected;
 	// mapping
 	var mappingLayers = {};
@@ -346,6 +352,62 @@ var xSROMap = function(){
 	};
 	var toggleMeasure = function(){
 		measuring ? stopMeasure() : startMeasure();
+	};
+	// remove any currently-drawn monster spawn shapes
+	var clearMonsterShapes = function(){
+		monsterShapes.forEach(function(s){ map.removeLayer(s); });
+		monsterShapes = [];
+	};
+	// Switch the map to the tile layer a spawn layer lives on (region 0 = world;
+	// a dungeon region resolves via getLayer, z picks the floor). Returns false
+	// if that dungeon has no defined tile layer (can't be shown).
+	var switchToMonsterLayer = function(region, z){
+		var layer = region ? getLayer({x:0, y:0, z:z||0, region:region}) : mappingLayers[''];
+		if(layer) setMapLayer(layer);
+		return !!layer;
+	};
+	// Draw one spawn layer's area(s)+dots in the mob's colour; returns the latlngs.
+	var drawMonster = function(layer, color, popup, withDots){
+		var all = [];
+		if(layer.areas && layer.areas.length){
+			var poly = L.polygon(layer.areas, monsterAreaStyle(color)).addTo(map);
+			if(popup) poly.bindPopup(popup);
+			monsterShapes.push(poly);
+			layer.areas.forEach(function(r){ all = all.concat(r); });
+		}
+		if(withDots && layer.dots){
+			layer.dots.forEach(function(d){
+				monsterShapes.push(L.circleMarker(d, monsterDotStyle(color)).addTo(map));
+				all.push(d);
+			});
+		}
+		return all;
+	};
+	// pick a mob's busiest spawn layer (most points)
+	var primaryLayer = function(m){
+		return (m.layers || []).slice().sort(function(a,b){ return b.dots.length - a.dots.length; })[0];
+	};
+	// Bounds of the DENSEST spawn concentration. Many mobs have scattered noise
+	// spawns (or spawn in two far-apart places), which would blow the zoom out to
+	// the whole map. Grid the points, take the busiest cell + its neighbours.
+	var densestBounds = function(dots){
+		if(dots.length < 6)
+			return L.latLngBounds(dots);
+		var G = 4, cells = {};
+		dots.forEach(function(p){
+			var k = Math.floor(p[0]/G)+'|'+Math.floor(p[1]/G);
+			(cells[k] = cells[k] || []).push(p);
+		});
+		var best = null, bestN = 0;
+		for(var k in cells)
+			if(cells[k].length > bestN){ bestN = cells[k].length; best = k; }
+		var p = best.split('|'), ci = +p[0], cj = +p[1], kept = [];
+		for(var di=-1; di<=1; di++)
+			for(var dj=-1; dj<=1; dj++){
+				var c = cells[(ci+di)+'|'+(cj+dj)];
+				if(c) kept = kept.concat(c);
+			}
+		return L.latLngBounds(kept.length ? kept : dots);
 	};
 	var initEvents = function(){
 		// live coordinate readout follows the cursor
@@ -747,6 +809,62 @@ var xSROMap = function(){
 			var pane = map.getPane('markers-'+type);
 			if(pane)
 				pane.style.display = visible ? '' : 'none';
+		},
+		// Lazily fetch the monster spawn data (once) and hand it to callback.
+		// The ?v is bumped whenever the data file is regenerated so browsers don't
+		// serve a stale cached copy.
+		LoadMonsterSpawns(callback){
+			if(monsterData){ callback(monsterData); return; }
+			fetch('assets/data/monster-spawns.json?v=8')
+				.then(function(r){ return r.json(); })
+				.then(function(d){ monsterData = d; callback(d); })
+				.catch(function(){ callback(null); });
+		},
+		// Draw one monster's spawn area + points on its busiest layer, and frame it.
+		// Switches to the right tile layer (world or a specific dungeon floor).
+		ShowMonsterSpawns(id){
+			this.LoadMonsterSpawns(function(data){
+				var m = data && data[String(id)];
+				var layer = m && primaryLayer(m);
+				if(!layer) return;
+				clearMonsterShapes();
+				if(!switchToMonsterLayer(layer.region, layer.z))
+					return;                  // dungeon has no tile layer to show
+				var lvl = m.minLevel ? ' Lv.'+m.minLevel+(m.maxLevel && m.maxLevel!=m.minLevel ? '-'+m.maxLevel : '') : '';
+				var all = drawMonster(layer, m.color, '<b>'+m.name+'</b>'+lvl, true);
+				if(all.length)
+					map.fitBounds(densestBounds(layer.dots.length ? layer.dots : all),
+						{padding:[40,40], maxZoom: layer.region ? 9 : 8});
+			});
+		},
+		// Clear the map and zoom to frame a filtered set (a zone) without drawing
+		// them - the legend lists them, click one to show it. Picks the set's
+		// dominant tile layer and zooms into its interquartile core.
+		ZoomToMonsterSet(filter){
+			this.LoadMonsterSpawns(function(data){
+				if(!data) return;
+				clearMonsterShapes();
+				var byLayer = {};   // region -> {region, z, dots}
+				for(var id in data){
+					if(!filter(data[id])) continue;
+					(data[id].layers || []).forEach(function(L){
+						if(!byLayer[L.region]) byLayer[L.region] = {region:L.region, z:L.z, dots:[]};
+						byLayer[L.region].dots = byLayer[L.region].dots.concat(L.dots);
+					});
+				}
+				var groups = Object.keys(byLayer).map(function(k){ return byLayer[k]; });
+				if(!groups.length) return;
+				groups.sort(function(a,b){ return b.dots.length - a.dots.length; });
+				var dom = groups[0];
+				if(!switchToMonsterLayer(dom.region, dom.z))
+					return;
+				// zoom to the zone's densest spawn concentration (many mobs are
+				// tagged to a zone but also spawn far away)
+				map.fitBounds(densestBounds(dom.dots), {padding:[40,40], maxZoom: dom.region ? 9 : 8});
+			});
+		},
+		ClearMonsterSpawns(){
+			clearMonsterShapes();
 		},
 		AddPlayer(id,html,x,y,z=null,region=null){
 			// Add only new ones
