@@ -387,6 +387,28 @@ var xSROMap = function(){
 	var primaryLayer = function(m){
 		return (m.layers || []).slice().sort(function(a,b){ return b.dots.length - a.dots.length; })[0];
 	};
+	// Bounds of the DENSEST spawn concentration. Many mobs have scattered noise
+	// spawns (or spawn in two far-apart places), which would blow the zoom out to
+	// the whole map. Grid the points, take the busiest cell + its neighbours.
+	var densestBounds = function(dots){
+		if(dots.length < 6)
+			return L.latLngBounds(dots);
+		var G = 4, cells = {};
+		dots.forEach(function(p){
+			var k = Math.floor(p[0]/G)+'|'+Math.floor(p[1]/G);
+			(cells[k] = cells[k] || []).push(p);
+		});
+		var best = null, bestN = 0;
+		for(var k in cells)
+			if(cells[k].length > bestN){ bestN = cells[k].length; best = k; }
+		var p = best.split('|'), ci = +p[0], cj = +p[1], kept = [];
+		for(var di=-1; di<=1; di++)
+			for(var dj=-1; dj<=1; dj++){
+				var c = cells[(ci+di)+'|'+(cj+dj)];
+				if(c) kept = kept.concat(c);
+			}
+		return L.latLngBounds(kept.length ? kept : dots);
+	};
 	var initEvents = function(){
 		// live coordinate readout follows the cursor
 		map.on('mousemove', function(e){
@@ -809,7 +831,8 @@ var xSROMap = function(){
 				var lvl = m.minLevel ? ' Lv.'+m.minLevel+(m.maxLevel && m.maxLevel!=m.minLevel ? '-'+m.maxLevel : '') : '';
 				var all = drawMonster(layer, m.color, '<b>'+m.name+'</b>'+lvl, true);
 				if(all.length)
-					map.fitBounds(L.latLngBounds(all), {padding:[40,40], maxZoom: layer.region ? 9 : 8});
+					map.fitBounds(densestBounds(layer.dots.length ? layer.dots : all),
+						{padding:[40,40], maxZoom: layer.region ? 9 : 8});
 			});
 		},
 		// Clear the map and zoom to frame a filtered set (a zone) without drawing
@@ -833,13 +856,9 @@ var xSROMap = function(){
 				var dom = groups[0];
 				if(!switchToMonsterLayer(dom.region, dom.z))
 					return;
-				var lats = dom.dots.map(function(p){ return p[0]; }).sort(function(a,b){ return a-b; });
-				var lngs = dom.dots.map(function(p){ return p[1]; }).sort(function(a,b){ return a-b; });
-				// interquartile range: some mobs are tagged to a zone but spawn far
-				// away, so the full span still covered the whole map
-				var q = function(a,p){ return a[Math.floor(p*(a.length-1))]; };
-				map.fitBounds([[q(lats,0.25), q(lngs,0.25)], [q(lats,0.75), q(lngs,0.75)]],
-					{padding:[40,40], maxZoom: dom.region ? 9 : 8});
+				// zoom to the zone's densest spawn concentration (many mobs are
+				// tagged to a zone but also spawn far away)
+				map.fitBounds(densestBounds(dom.dots), {padding:[40,40], maxZoom: dom.region ? 9 : 8});
 			});
 		},
 		ClearMonsterSpawns(){
