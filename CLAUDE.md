@@ -112,11 +112,35 @@ Three directions, roughly increasing in effort:
    highest visible payoff. Good first slice.
 2. **New features / behavior** — search improvements, custom markers, layer
    toggles, and the flagship: **"Show on map" deep-links.** The main site's
-   quest/monster pages link to this map with coords so it opens centered on the
-   giver NPC / mob spawn. Mechanism already exists: the map **accepts GET params**
-   for shareable location links (README), and `main.js` reads them. So the main
-   site just builds a URL; this repo makes sure the param handling + `FlyView`/
-   marker highlight land where we want. Design the URL contract deliberately.
+   quest/monster pages link to this map so it opens on the giver NPC / mob spawn.
+
+   **The deep-link contract (both halves shipped):**
+
+   | URL | Behaviour | Used by |
+   |---|---|---|
+   | `?x=&y=&z=&region=` | Centres and drops a pin. `z` is ignored (it's the game's height axis); `region` may be a negative dungeon id. | quest pages — this repo has no NPC position data, so the site supplies coords |
+   | `?mob=<id>` | Draws that monster's spawn area on its busiest layer and frames the densest cluster. | monster pages — **id only**, because this repo owns the spawn geometry |
+
+   Two different shapes on purpose. Monsters go by id because
+   `assets/data/monster-spawns.json` already holds their traced spawn areas, so
+   passing coords would duplicate projection maths that lives here. Quest givers
+   are NPCs, which that file doesn't cover, so those go by coordinate. The rule:
+   the repo that owns a coordinate space owns the maths in it.
+
+   Ids are the same ones in SROCodex's `SeedData/monsters.json` — all 589 spawn
+   keys exist among its 790 monsters, so any monster page can address one.
+
+   **Security note for this work stream:** URL params are attacker-controlled
+   input, and both `main.js` and `xSROMap.js` build popup/sidebar HTML by string
+   concatenation before handing it to jQuery/Leaflet. Anything off the query
+   string must be validated (coords → `parseFloat` + finite/range check, never
+   interpolated raw) or escaped before it reaches an HTML sink. `?mob=` is
+   digits-only by regex and used solely as a lookup key — the name shown in the
+   search box comes from our own data file, assigned via `.value`, never as HTML.
+   Note the param readers exist in **three** places now — `xSROMap.js`
+   `setInitialView` positions the map, `main.js` `window.onload` prefills the
+   search box, and the monster block reads `?mob=` — so validation has to cover
+   all three, or they should be consolidated into one reader.
 
    **Security note for this work stream:** URL params are attacker-controlled
    input, and both `main.js` and `xSROMap.js` build popup/sidebar HTML by string
