@@ -113,6 +113,29 @@ xSROMap.ShowDrawingToolbar('topright',true,false,true,false,true,true,true,true,
 		input.value = ''; zoneSel.value = ''; legendEl.innerHTML = '';
 		xSROMap.ClearMonsterSpawns();
 	});
+
+	// Deep-link: ?mob=<id> opens straight onto one monster's spawn area, so SROCodex
+	// can link a monster page here. The site already holds the same ids (they come
+	// from its monsters.json), so the id is the whole contract - no coords needed,
+	// because this repo owns the spawn geometry.
+	//
+	// The id is validated as digits and used ONLY as a lookup key into the spawn
+	// data. It never reaches markup: the popup text comes from our own data file,
+	// and the search box gets it via .value (a property assignment, not HTML).
+	// Unknown ids no-op, same as an unknown name in the search box.
+	//
+	// Runs after xSROMap.init above, so if a caller passes both ?x=&y= and ?mob=,
+	// the mob wins - the coord pin is already placed, then this reframes.
+	var mobParam = new URLSearchParams(location.search).get('mob');
+	if(mobParam !== null && /^[0-9]{1,10}$/.test(mobParam)){
+		load(function(d){
+			var m = d[mobParam];
+			if(!m) return;
+			populate();
+			input.value = m.name + lvl(m);
+			xSROMap.ShowMonsterSpawns(mobParam);
+		});
+	}
 })();
 
 // Examples about how to add shapes
