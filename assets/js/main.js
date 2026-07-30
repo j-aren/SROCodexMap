@@ -122,7 +122,7 @@ xSROMap.ShowDrawingToolbar('topright',true,false,true,false,true,true,true,true,
 	// The id is validated as digits and used ONLY as a lookup key into the spawn
 	// data. It never reaches markup: the popup text comes from our own data file,
 	// and the search box gets it via .value (a property assignment, not HTML).
-	// Unknown ids no-op, same as an unknown name in the search box.
+	// Unknown ids say so in the legend rather than no-opping.
 	//
 	// Runs after xSROMap.init above, so if a caller passes both ?x=&y= and ?mob=,
 	// the mob wins - the coord pin is already placed, then this reframes.
@@ -130,7 +130,13 @@ xSROMap.ShowDrawingToolbar('topright',true,false,true,false,true,true,true,true,
 	if(mobParam !== null && /^[0-9]{1,10}$/.test(mobParam)){
 		load(function(d){
 			var m = d[mobParam];
-			if(!m) return;
+			if(!m){
+				// We hold spawn areas for 589 of the site's 790 monsters, so a link can
+				// legitimately arrive for one we can't draw. Say so - silently showing the
+				// default world view reads as a broken link.
+				legendEl.textContent = 'No spawn data for this monster.';
+				return;
+			}
 			populate();
 			input.value = m.name + lvl(m);
 			xSROMap.ShowMonsterSpawns(mobParam);
